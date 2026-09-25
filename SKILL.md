@@ -324,13 +324,15 @@ write; a remembered "ask whether" is not enforcement. Roughly every third
 completion is the rule; the count need not be precise. (Exception for a
 priced-write workspace: `references/environments.md`.)
 
-**A denied or failed write is not a read-only log.** A transient failure
-(an I/O error, a timeout, a tool error with no permission decision) gets
-one retry. A permission or classifier denial is authoritative: tell the
-user in one line what was denied and why the write mattered, then carry
-the observations in report-back or handoff mode (`references/environments.md`).
-Keep at most one identical retry of a classifier denial, told to the user
-as a check for a probabilistic false negative — never a different tool.
+**A denied or failed write is not a read-only log.** Retry once before
+concluding the workspace is unwritable, and try a second tool reaching the
+same path — a classifier can deny one interface while allowing another,
+and consecutive denials from a probabilistic gatekeeper are noise, not a
+wall. Report "failed N times", never "cannot be done", unless retries and
+alternate interfaces are exhausted; otherwise observations are silently
+lost for the rest of the session. A mode that refuses every write by
+design is the exception: defer, don't retry (`references/environments.md`,
+"A mode that forbids every write by design").
 
 **Deliverable-event flush.** Whenever a unit of work is declared complete
 to a human — a file handed over, a render, a staged skill file, a
