@@ -1905,38 +1905,20 @@ the next time it is needed, never at the moment of deletion. Rounds, not
 days, are what the rule counts (a same-day second round is its own
 copy).
 
-**Non-skill files are split by owner.** The files this skill's review owns
-in the observation workspace — `cross-cutting-principles.md`,
-`skill-families.md`, the starter-set triage reference,
-`activation-tiers.txt`, `checkpoints.log`, `last-review-date.txt` and
-`skill-updates/PENDING.md` — have no install step, and other steps of
-this procedure already write them. The review writes them directly: it
-re-reads the file immediately before the write and applies its change as
-a patch to that read, never as a copy prepared earlier. The Step 8
-summary lists each such file with its diff. A staged copy or patch of
-one of them left by an earlier round is applied the same way by the next
-review, not carried forward as an install instruction. A file another
-process owns and reads at run time stays staged, as the next paragraph
-says. The failure shape: staging a file that has no install step turns
-the review's own write into a manual copy for the user, and every run
-until someone makes it reads the file without the change.
-
-**State files are staged as a patch, never as a snapshot.** A state file
-here is a non-skill file another process owns and reads at run time — a
-routine's registry or config note, an instruction file. A review that
-changes one stages it under
-`skill-updates/<date>/_target-files/` as a patch: a unified diff against
-the live file (`diff -u "$live_file" "$changed" > "<file>.patch"`), or the
-changed lines with enough context to place them. Its manifest entry
-records the live file's byte size and sha256 at staging time
-(`wc -c < "$live_file"`; `sha256sum` on GNU, `shasum -a 256` on macOS),
-which the reconciliation gate re-checks before repeating any install
-instruction (Step 1, "A staged state file is reconciled by its recorded
-hash"). The failure shape: every run writes a state file, so a snapshot
-goes stale with the next run, and its "copy it over" instruction becomes
-an overwrite that deletes everything written since staging while reading
-as compliance; a stale patch degrades into a conflict someone has to
-resolve instead.
+**Executable artefacts are staged like skills.** The second-violation rule
+makes the review produce barriers — a hook, a lint rule, a script a hook
+calls — and each of these refuses calls the moment it is live. Stage them
+under `skill-updates/<date>/hooks/` (or `lint/`, `scripts/`), never at the
+path the harness runs; the manifest entry carries the path a staged file
+replaces or, for a new one, the configuration line that registers it, so
+nothing is live until the user acts. A change to a registered file is
+staged the same way whatever its shape — a new trigger, a dispatcher
+branch, an import: new logic behind an entry point that is already
+registered meets no registration step, so the staging is its only gate.
+Before staging, run the script offline on payloads built from the real
+tool record (`signals.md`, "Second violation — why a barrier, not a
+rewording"); after install, the next session confirms it refuses the real
+command and passes a legitimate one.
 
 **The dated staging folder is multi-writer.** `skill-updates/<date>/` is
 a namespace keyed only by date, so a manual session and a scheduled run
