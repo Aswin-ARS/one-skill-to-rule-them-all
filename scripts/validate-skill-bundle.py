@@ -1156,7 +1156,7 @@ def scan_case(scenario, pass_root):
             (log / "0001-a.md").write_text('---\nid: 1\ntitle: "never closed"\n', encoding="utf-8")
         if scenario == "moved":
             (root / "skill-observations" / "MOVED.md").write_text(
-                "Moved to /new/root on 2026-10-05\r\n", encoding="utf-8")
+                "Moved to /new/root on 2026-01-01\r\n", encoding="utf-8")
         env = {k: v for k, v in os.environ.items() if k != "TASK_OBSERVER_WORKSPACE"}
         args = ["bash", str(SCAN_SCRIPT)] + ([str(root)] if pass_root else [])
         r = subprocess.run(args, cwd=tmp, env=env, capture_output=True, text=True,
@@ -1228,7 +1228,7 @@ def migrate_case(skill_line, ov):
         t = pathlib.Path(tmp)
         for k in ("companion-a", "companion-b"):
             (t / "skills" / k).mkdir(parents=True)
-        (t / "log.md").write_text("### Observation 88: T\n**Date:** 2026-05-02\n**Status:** OPEN\n"
+        (t / "log.md").write_text("### Observation 88: T\n**Date:** 2026-01-01\n**Status:** OPEN\n"
                                   f"**Skill:** {skill_line}\n\n**Issue:** x\n", encoding="utf-8")
         args = [sys.executable, str(MIGRATE_SCRIPT), "--convert", str(t / "log.md"),
                 "--out", str(t / "out"), "--known-skills",
