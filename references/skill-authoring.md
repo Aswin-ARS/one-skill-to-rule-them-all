@@ -227,9 +227,9 @@ from that line, never by hand:
 | file | lines | triggers |
 |---|---:|---:|
 | `weekly-review.md` | 1,990 | 3 |
-| `environments.md` | 1,705 | 12 |
+| `environments.md` | 1,704 | 12 |
 | `observation-log.md` | 1,493 | **20** |
-| `skill-authoring.md` | 1,367 | 7 |
+| `skill-authoring.md` | 1,369 | 7 |
 | `starter-principles.md` | 482 | 1 |
 | `migration.md` | 250 | 1 |
 | `signals.md` | 234 | 6 |
@@ -1347,7 +1347,7 @@ any skill creation or regeneration.
 ## Reference-file ceilings — the growth barrier
 
 The trigger count the validator prints on every run becomes a gate for a
-skill that opts in. Opting in is one file, `references/.ceilings`, with a
+skill that opts in. Opting in is one file, `references/ceilings.txt`, with a
 line per reference file — `<file.md> <ceiling>`, seeded at each file's
 current count — and one `Load triggers: a; b; c` line in each reference
 file's header (before its first `## ` heading), one entry per distinct
@@ -1363,5 +1363,7 @@ the sidecar present, `validate-skill-bundle.py` fails when:
 - a file has no ceiling line or no `Load triggers:` line.
 
 Size alone never forces a split, so a single-episode file is still never
-split to meet a size rule. Without the sidecar nothing is gated. Change a
-file's `Load triggers:` line in the same edit as any core pointer into it.
+split to meet a size rule. Without the sidecar nothing is gated, which is
+why it has a plain name: an install route that drops dotfiles would switch
+the gate off without a word. Change a file's `Load triggers:` line in the
+same edit as any core pointer into it.

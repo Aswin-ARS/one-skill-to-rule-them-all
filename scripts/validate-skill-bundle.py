@@ -573,10 +573,11 @@ def check_reference_indexes(skill_dir, fails):
 # Size alone never forces a split, so a single-episode file is never split to
 # meet a size rule. The ceiling follows trims down with the core's tolerance.
 #
-# Opt-in, per skill: a `references/.ceilings` file holds one line per file —
+# Opt-in, per skill: a `references/ceilings.txt` file holds one line per file —
 #   <file.md> <ceiling> [<YYYY-MM-DD> <reason for the last raise>]
-# with `#` comments and blank lines allowed. A skill without one has not opted
-# in: the shape line is printed and nothing is gated, so the public validator
+# with `#` comments and blank lines allowed. Not a dotfile: an install route
+# that drops dotfiles would silently switch the gate off. A skill without one
+# has not opted in: the shape line is printed and nothing is gated, so the public validator
 # imposes no budget on a skill whose author never set one.
 #
 # The trigger count is DECLARED, not inferred: each reference carries one
@@ -586,7 +587,7 @@ def check_reference_indexes(skill_dir, fails):
 # filename-only pointer names no section at all — so the scan is kept only as
 # the fallback figure for a file that declares nothing (printed with `~`) and
 # as a cross-check that a declaration has not fallen behind the core.
-REF_CEILINGS_FILE = ".ceilings"
+REF_CEILINGS_FILE = "ceilings.txt"
 SPLIT_TRIGGER_THRESHOLD = 12
 LOAD_TRIGGERS_RE = re.compile(r"(?m)^Load triggers:[ \t]*(.*?)[ \t]*$")
 REF_CEILING_LINE_RE = re.compile(
@@ -643,7 +644,7 @@ def declared_load_triggers(text):
 
 
 def read_ref_ceilings(refs, fails):
-    """{file: (ceiling, date, reason)} from references/.ceilings, or None when
+    """{file: (ceiling, date, reason)} from references/ceilings.txt, or None when
     the skill has not opted in. Every malformed line fails: a skill that
     opted in and wrote a line the gate cannot read must not pass ungated."""
     import datetime
@@ -1040,7 +1041,7 @@ RESIDUE_FIXTURES = [
 
 
 def roundtrip_case(after_pack):
-    """Pack a three-file fixture skill (one a dotfile sidecar the bundle must
+    """Pack a three-file fixture skill (one the ceilings sidecar the bundle must
     carry), apply `after_pack` to the directory, and report whether
     verify_roundtrip() failed — None if the sidecar was not packed. Runs in a
     temporary directory outside any staged tree."""
@@ -1053,7 +1054,7 @@ def roundtrip_case(after_pack):
         out = pathlib.Path(tmp) / "fixture-skill.skill"
         written = pack(src, out)
         if f"fixture-skill/references/{REF_CEILINGS_FILE}" not in written:
-            return None           # a dotfile sidecar left out of the bundle
+            return None           # the sidecar left out of the bundle
         after_pack(src)
         fails = []
         verify_roundtrip(out, src, written, fails)
@@ -1244,7 +1245,7 @@ def migrate_case(skill_line, ov):
 def ref_shape_case(lines, triggers, sidecar):
     """Run check_reference_shape over a one-reference fixture skill: a.md of
     `lines` lines declaring `triggers` load triggers (None = no declaration),
-    beside `sidecar` as references/.ceilings (None = not opted in). Returns
+    beside `sidecar` as references/ceilings.txt (None = not opted in). Returns
     the failures."""
     with tempfile.TemporaryDirectory() as tmp:
         refs = pathlib.Path(tmp) / "fixture-skill" / "references"
