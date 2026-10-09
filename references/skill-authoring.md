@@ -240,11 +240,11 @@ section, so a file the core cites only by filename reads n/a:
 
 | file | lines | triggers |
 |---|---:|---:|
-| `weekly-review.md` | 1,992 | 1 |
-| `observation-log.md` | 1,714 | **18** |
-| `environments.md` | 1,432 | 5 |
-| `skill-authoring.md` | 1,400 | n/a |
-| `starter-principles.md` | 444 | n/a |
+| `weekly-review.md` | 2,133 | 1 |
+| `observation-log.md` | 1,738 | **18** |
+| `environments.md` | 1,725 | 6 |
+| `skill-authoring.md` | 1,427 | n/a |
+| `starter-principles.md` | 480 | n/a |
 | `signals.md` | 232 | 4 |
 | `migration.md` | 226 | n/a |
 
