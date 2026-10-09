@@ -31,7 +31,7 @@ empty.
   - A refused snippet is a degraded path, never a skipped step
 - Skill families and the sibling check
 - Assigning an id
-  - Shell portability of the id snippet — why the case patterns are parenthesised
+  - Shell portability — a `case` pattern inside `$( )` is parenthesised
   - The guard line, the sweep's count and the noclobber create
   - Run the snippet immediately before every write
   - Resolve each id at its own write time
@@ -120,13 +120,6 @@ under the pinned root from outside the sandbox — instead of retrying
 through another interface or falling through to the unwritable-log or
 no-filesystem branches.
 
-**Why a command and not the prose list it replaces.** Observed on a fresh
-user-scope install: a session created `skill-observations/` and
-`observation-log/` and nothing else. The next session could not tell —
-step 1's probe is an `ls` of the pinned path, the path resolved,
-`observation-log/` was there, and nothing re-checks the siblings. The
-workspace looked set up from outside for as long as nobody looked closer.
-
 The assertion loop is the half that matters, because the four artefacts
 fail differently and only one of them complains:
 
@@ -186,10 +179,7 @@ the five values — a reader that happens to case-fold hides the defect, it
 does not license it. `id:` is the integer the snippet printed, never the
 zero-padded filename prefix. A scan that parses every header and checks
 none of them against this table touches such an entry on schedule and
-reports a clean count (observed: an entry written without the template
-sat four days under `skills:`, with `status: OPEN` and no `type:`,
-`siblings_checked:` or `area:`, beside a scan that reported every header
-parsed). The failure produces a smaller number, never an error, which is
+reports a clean count. The failure produces a smaller number, never an error, which is
 why a near-miss name is flagged rather than skipped wherever a check runs.
 
 **An entry is UTF-8 without a byte order mark.** Every header reader tests
@@ -212,12 +202,9 @@ reading `status`, a hook counting `skill:`, a validator checking the header.
 Those throw on the file, and a thrown file is usually skipped rather than
 reported.
 
-Measured on one live log at last verification: **27 of 292 files
-unreadable**, 25 of them in `resolution:` — which is the field most likely
-to contain a colon, because a resolution naturally reads "Actioned:
-principle #8 extended…". Every one of the 27 had been written by following
-the template as it then stood, which carried the value unquoted. The
-template taught the defect, and each author complied with it.
+Measured on one live log: about one header in ten unparseable, most in
+`resolution:` (the field most likely to hold a colon), each written by
+following a template that carried the value unquoted.
 
 The scan's `suspect` count is the early warning: it reports headers that
 look invalid by shape — an unquoted `: `, text after a closing quote
@@ -274,8 +261,7 @@ colon** — `skill: ["superpowers:test-driven-development",
 task-observer]` — or use a block list, where the colon is legal
 unquoted. Both forms parse identically under both rules; the cost is two
 characters per scoped entry. A plugin-scoped name is not a bare
-kebab-case name, which is why "keep lists bare" stopped being correct
-once namespaced skills were observed. `scripts/migrate-log.py` already
+kebab-case name. `scripts/migrate-log.py` already
 writes the quoted form, so a migrated log is portable; entries written
 by hand from the template are the ones to check.
 
@@ -301,9 +287,8 @@ second, sharper test that the first one passes right past.
 A maintainer folds the change into a commit of their own with a co-author
 trailer, cherry-picks it, or rewrites it; the PR stays open or is closed as
 overtaken, while **the result the entry was waiting for has fully
-arrived**. The condition never fires. Observed twice in the same
-repository, which suggests it is the normal case for a contribution to a
-repository someone else maintains, not the exception.
+arrived**. The condition never fires — the normal case for a
+contribution to a repository someone else maintains, not the exception.
 
 So the test is not only *can this condition occur at all* but **can the
 result arrive without the condition firing?** For anything depending on
@@ -329,10 +314,7 @@ is accepted, merged or released — none of those changes the copy that is
 running — and nothing observes a re-install. So the entry stays `parked`
 on a condition read from the installed copy ("the installed `task-observer`
 carries rule X", or names the version that carries it), and is resolved
-when that copy carries the fix. (Observed: an install pinned nineteen days
-behind upstream had four of its own reports fixed and released in that
-window, and the sessions that read the release notes were still running
-the old text — one of them hit a defect the same release had fixed.)
+when that copy carries the fix.
 
 ### Context preservation — the `reference:` field
 
@@ -364,12 +346,7 @@ possible, mark the command unverified in the body. Record the outcome in
 the body quotes no command, for the same reason `siblings_checked:` never
 stays blank: a body with an unrun command is byte-identical whether it was
 checked and trusted or never considered, and only the field makes the
-absence visible. (Observed: three observations turned into one skill
-carried three wrong commands between them — a flag that does not exist on
-the distribution named, `$!` addressed to a wrapper instead of the process
-it started, an inventory read from a cache a prior step has to populate —
-caught only because that skill happened to be authored where they could
-run.)
+absence visible.
 
 **A sweep the Suggested improvement prescribes names the behaviour, not
 the pattern that found the first instance.** When the improvement tells a
@@ -578,10 +555,7 @@ known-bad argument. If that also returns empty with a success exit, the
 path is TTY-gated (or otherwise silent under this invocation), the
 instrument cannot answer the question, and the correct output is to
 hand the command to an interactive terminal rather than report "none
-found". Observed: a session-listing subcommand piped to `head` returned
-zero bytes and exit 0; `--version` printed and was read as confirmation
-of "no sessions"; the same subcommand with an invalid id also returned
-zero bytes and exit 0.
+found".
 
 **A number read from a file another process is still writing is
 provisional until that process is known to have exited.** This is the
@@ -597,23 +571,14 @@ for a backgrounded command is not a completeness signal. So for this
 class the guard is not a second count but a liveness-and-exit check —
 the producer's exit status, or a process check (`pgrep` on its
 pattern) — run before the interim output is interpreted at all, never as
-a cross-check after a plausible-looking empty result. Observed: a
-recursive search over a large working tree, moved to a background task
-with its output file offered for interim reads, was read twice as zero
-hits; its three processes were still running twelve minutes later and
-had flushed nothing.
+a cross-check after a plausible-looking empty result.
 
 **When the instrument is code written in this session, its input coverage
 is unverified by construction — print what it ingested, not only what it
 found.** A shipped snippet has at least been run against the population
 it is meant to read; a throwaway parser has been run against whatever its
-author's heuristic happened to match. Observed: a scan for a canonical
-term list, re-derived at call time from bullets under a plausible heading,
-reported "3 terms checked, hits: none" — the list's own machine-readable
-block held 24, and the parser had read three incidental bullets from an
-adjacent section. A pass from an instrument that saw an eighth of its
-input is not evidence of anything, and it was caught only because the
-count looked implausibly small. So the guard's form for session-written
+author's heuristic happened to match, and a pass from an instrument that
+saw a fraction of its input is not evidence of anything. So the guard's form for session-written
 code is a **coverage assertion before any result**: print the count of
 terms, rows or files the instrument read and assert it against the
 canonical source's own count (the block's line count, the directory's
@@ -659,12 +624,7 @@ agent's own reasoning, it is unverified until something outside that
 inference returns it. State the mechanism as a hypothesis, name the
 observation that would settle it, and when the check costs minutes and
 being wrong costs an irreversible action, run the check before answering
-rather than after being challenged. Observed: whether signing a commit
-would clear a hosting platform's "unverified" badge decided a force-push
-to a public repository; the answer was asserted twice, confidently, with
-no evidence, and settled in ninety seconds by two API calls once the user
-pushed back with a competing mechanism — which turned out to be the
-correct cause. The tell that separates this from ordinary uncertainty is
+rather than after being challenged. The tell that separates this from ordinary uncertainty is
 **repetition**: a first confident answer is a guess; repeating it under
 implicit doubt without going to look is the moment the guard should fire,
 because repetition feels like consistency and is entrenchment. Being
@@ -869,10 +829,7 @@ source a project copy is rendered from (a tool-owned directory rendered
 into `.claude/skills/`), are invisible from here, so "no installed skill
 covers this" is a blind spot of the observer until those scopes have
 been searched — and the failure only runs one way: a narrow scope never
-invents a skill, it only misses real ones, which is the costly outcome
-(observed: four observations filed as a new-skill proposal for a
-workflow that an existing skill in two other repositories already
-covered, two of them already applied there). Before writing
+invents a skill, it only misses real ones, which is the costly outcome. Before writing
 `proposes_skill:`, a `none` in `siblings_checked:`, or a target as
 missing, search the other scopes by the problem as well as by the name —
 a proposal is named after the task that surfaced it, and the skill that
@@ -915,12 +872,8 @@ writes nothing is the odd one out and should be suspected on that basis.
 **Recording the verdict is not recording its evidence.** The field makes
 the absence of the *ritual* visible; it does nothing for the absence of
 the *grounds*, and once the ritual is habitual the failure moves from the
-omitted field to the confidently filled one. Observed: a sibling excluded
-with a specific verdict — "selects items by stable id, so this does not
-apply" — whose own documentation carried a prominent warning about
-exactly the defect under discussion; the verdict read like a checked one
-and was an assumption, found only when a later session opened that
-sibling for an unrelated reason. The asymmetry decides where the ground
+omitted field to the confidently filled one: a specific-sounding verdict
+can be an assumption that reads like a checked one. The asymmetry decides where the ground
 goes: a sibling wrongly included costs one redundant paragraph at the
 next review, where someone reads it and drops it; a sibling wrongly
 excluded leaves the family silently and for good, because nothing
@@ -995,26 +948,14 @@ by the log. Treat a scan that does not return as a broken instrument, never as
 a slow one to wait on — the BROKEN guard cannot fire for a command that
 never finished.
 
-### Shell portability of the id snippet — why the case patterns are parenthesised
+### Shell portability — a `case` pattern inside `$( )` is parenthesised
 
-The single-pass sweep has no `case` statement left, but the loop it
-replaced put two inside the command substitution `seen=$( … )`, and the
-rule they taught stands for any snippet that does the same: a `case`
-pattern inside `$( )` is written `(pattern)`, not `pattern)`. The leading
-parenthesis is not style.
-
-Bash 3.2 — which is what `/bin/bash` still is on a stock macOS install — ends
-a command substitution at the first unbalanced `)`, and an unparenthesised
-case pattern supplies exactly that. The whole block then fails at **parse**
-time with `syntax error near unexpected token ';;'` and exits 2. Nothing
-inside it runs: no archival sweep, no id, no file, and — the part that makes
-it hard to diagnose — neither `ARCHIVAL SWEEP BROKEN` nor `ID COMMAND BROKEN`
-can fire, because those guards are inside the block that never started. A
-guard cannot report a failure that happens before it exists.
-
-Parenthesised patterns are valid in every POSIX shell and in every bash
-version, so the portable form costs nothing. Keep it in every snippet that
-puts a `case` inside `$( )`.
+A `case` pattern inside `$( )` is written `(pattern)`, not `pattern)`:
+bash 3.2 (`/bin/bash` on stock macOS) ends the substitution at the
+unbalanced `)`, the block fails at parse time with `syntax error near
+unexpected token ';;'`, and no guard inside it can fire — a guard cannot
+report a failure that happens before it exists. The parenthesised form is
+valid in every POSIX shell and bash version; the scripts keep it.
 
 **If you are porting the snippet or writing a new one:** run it once under
 `/bin/bash` on macOS, not only under the shell your session happens to have.
@@ -1028,9 +969,8 @@ the log": a command that fails to empty rather than to error would
 otherwise propose id 1 in a populated log. It compares the number of ids
 the glob listed with `find`'s count of prefixed files in the same two
 directories, so it fires on a partial listing as well as an empty one,
-and it runs on the listing alone, before the floor enters — an earlier
-form merged the floor into the maximum first, and a listing broken to
-nothing then returned the floor and passed. The highest file id is kept
+and it runs on the listing alone, before the floor enters — merged into
+the maximum first, the floor would let a listing broken to nothing pass. The highest file id is kept
 apart from the floor for the same reason: the new id is the larger of
 the two plus one, and a file maximum below the floor is a NOTE (ids
 issued without a file), not a halt, because older snippets left exactly
@@ -1051,15 +991,15 @@ same slug resolve to one identical path, where the second writer would
 silently replace the first. So the snippet creates the file under
 `noclobber` — write the body only after that create succeeds.
 
-**The collision guard is keyed on the id prefix, not on the path.** An
-earlier form tested `[ -e "$f" ]` — the full path, slug included — and
-could not catch the collision that actually happens: two writers deriving
+**The collision guard is keyed on the id prefix, not on the path.** A
+test of `[ -e "$f" ]` — the full path, slug included —
+cannot catch the collision that actually happens: two writers deriving
 the same number with *different* slugs produce two different paths, both
 creates succeed, and two files share one id with no error anywhere. A
 guard has to be keyed on the invariant it protects; noclobber protects a
 path, the invariant is a unique number, and a guard on the path passes
 every violation of the number that uses a different slug — which is all
-of them. So the guard now asks whether any file with the derived prefix
+of them. So the guard asks whether any file with the derived prefix
 exists in `observation-log/` or `archive/` (`find … -name 'NNNN-*.md'`,
 never a bare glob), and halts if one does. It fires when the derivation
 is stale — the id came from somewhere other than a snippet run
@@ -1081,10 +1021,7 @@ for it, and is the state in which skipping feels most reasonable. Those are
 evidence about the other: a relevance grep returns its highest **matching**
 entry, not the highest entry, and neither it nor any plain listing of
 `observation-log/` reads `archive/` or `.id-floor`, which are two of the
-three inputs and the reason the command exists. (Observed: a relevance grep
-whose top hit was id N was read as meaning the next id was N+1, over an id
-already in use, while the true maximum, sitting in the archive, was twenty
-higher.) If a collision happens anyway it is harmless — distinct files,
+three inputs and the reason the command exists. If a collision happens anyway it is harmless — distinct files,
 nothing lost — but should be fixed on discovery rather than left for a
 review to notice: derive a correct id with the snippet, `mv` the newer file
 to that prefix, and edit its `id:` frontmatter field to match. Both are
@@ -1096,20 +1033,8 @@ barrier, the prefix guard the backstop where it cannot run.
 
 ### Resolve each id at its own write time
 
-**Every write, not just batched ones.** An earlier version of this rule
-opened "when logging more than one observation in a session that may
-overlap a scheduled review or another writer" — two scope conditions, and a
-single write in a session that looks like it overlaps nothing satisfies
-neither. The reported failure was exactly that shape: one observation, the
-snippet run in the same shell call printing `next_id=92`, and the heredoc
-that followed carrying `91` in both the filename and the `id:` field. A
-parallel session had written `0091` in between. The scope conditions are
-gone: run the snippet before **each** write, including the first and only
-one of a session.
-
-**Write the value the snippet printed.** This is the step the rule never
-stated, and it is where that failure actually happened — not in deriving
-the id, which was correct, but in the gap between deriving it and typing it.
+**Write the value the snippet printed.** The failure lives in the gap
+between deriving the id and typing it, not in the derivation.
 The number the snippet prints goes into the filename **and** the `id:`
 field, copied, not retyped from memory of what you expected it to be. If
 the two disagree, the file is the one every later scan believes.
@@ -1141,8 +1066,7 @@ lag is invisible in ordinary use — until the active directory is archived
 down, when a floor that lags is exactly the precondition for the counter
 restarting over ids already issued. The lag is detectable: **floor < highest
 active prefix means an issuer skipped the floor write**, and whatever wrote
-those files did not run the snippet (observed: three consecutive ids issued
-with the floor left three behind). The scan may assert it; the check is one
+those files did not run the snippet. The scan may assert it; the check is one
 line, and it belongs after the scan's counts, before the content print:
 
 ```bash
@@ -1165,9 +1089,7 @@ earlier in the session is suddenly missing, or the id check returns empty
 in a log you know is populated, HALT and re-probe the structure (is there
 an `observation-log/`? a `log.md.migrated`?) — a parallel session may have
 migrated or reorganised the storage. Never let an append silently recreate
-a missing target: that converts a migration signal into corruption
-(observed: a stale session recreated the retired `log.md` with a fresh
-"Observation 1" after the per-file migration renamed it; see
+a missing target: that converts a migration signal into corruption (see
 `migration.md` on coexistence with live sessions). A writer's model of
 shared mutable state is only as fresh as its last read.
 
@@ -1178,12 +1100,8 @@ know exists is the same signal ("Guard the read, not just the write").
 
 Because every observation lives in its own file, a new observation never
 touches another entry's bytes, so it cannot truncate, overwrite or renumber
-anyone else's work. The single-file log needed a check-then-act-then-verify
-numbering ritual, bounded-mutation rules, a structural-invariant check and a
-survival check, because one greedy substitution once overwrote sixteen
-entries from a Status line to end-of-file, and because a parallel session's
-write-back once silently erased entries appended minutes earlier. None of
-those failure modes exist when each file is isolated. In the rare case two
+anyone else's work: per-file isolation removes the overwrite and
+lost-write failure modes of a shared file. In the rare case two
 parallel sessions pick the same id, the result is two files sharing a
 number — harmless, distinct files, nothing lost, as long as the slugs
 differ; the script's number claim prevents it for runs at the same moment,
@@ -1200,7 +1118,7 @@ list, a review report, a manifest. Locate the target by its own boundaries
 (the item's first line and the next item's first line), never by
 surrounding whitespace or a greedy pattern: a `\n\n` "paragraph" boundary
 around one item of a numbered list ran to the end of the list and deleted
-every item after it, exactly the shape of the sixteen-entry loss above.
+every item after it.
 Re-read the region after the edit and count what survived against what
 was meant to survive.
 
@@ -1250,14 +1168,6 @@ are both honest and both stale the moment they are read: a handoff or
 manifest state, and a session listing. A **paused** session has not released
 its task — it is idle, it reads as idle, and it can resume at any moment
 with its own decisions intact.
-
-Observed: a long multi-step review was left paused partway through, its
-state saying "waiting on the user's decisions" and the listing showing it
-not running. A second session checked both at planning time, correctly
-concluded the first was idle, and planned to take over. Before it made its
-first write the user resumed the first session, which then recorded its
-decisions and completed most of the work. Had the second session written,
-it would have re-asked the user decisions they had already made.
 
 So the check belongs immediately before the first write, in the same turn —
 the same rule as re-reading a file before editing it, for the same reason.
@@ -1321,16 +1231,6 @@ cannot be revisited.** `declined` means someone judged an alternative
 unworkable, and that judgement is a factual claim which can be wrong — in
 which case it silently vetoes the better solution forever, because every
 later reader finds the decision already made.
-
-Observed: an entry recorded that a helper had been rejected because it
-"would die hard inside a nonfatal wrapper and leak the session it had
-started". Plausible, specific, and completely unfalsifiable from the entry
-itself — no file, no line, no command. A later session read the helper's
-source: it uses the library's return-instead-of-exit form under exactly
-that wrapper, so the stated failure could not occur. The premise was simply
-false. The helper was adopted and improved both call paths. Between those
-two sessions the entry did its job perfectly — it was read, believed, and
-honoured.
 
 So a `resolution:` on a declined entry carries **the evidence, not only the
 verdict**: what was examined (file, line, command, output), and what would
@@ -1418,10 +1318,7 @@ run `git clean` with that directory in scope.
 read.** The id snippet takes the maximum over the files this install can
 see; ids another install has minted and not yet pushed are not unread,
 they are absent, so both mint from their own maximum and every guard on
-either side passes honestly (observed: fourteen colliding ids in one
-push after a week of logging on two machines, nine of them invisible to
-a bare listing because one side wrote `63-` and the other `0063-` — the
-review's duplicate-id check strips the padding and finds them). And
+either side passes honestly. And
 `.id-floor` is one file recording a per-writer fact, so it merges as a
 conflict between two correct values: resolve it upward, never by picking
 a side. Two installs sharing a log through a repository serialise their
@@ -1456,10 +1353,7 @@ variable before the first `mv`. Never run a second read of the directory
 — a `grep` over its files, a separate glob expansion, a listing — while
 the move is in progress: whether that reader hits files the mover has
 already moved depends on which stage is ahead, and its "No such file or
-directory" errors have the same shape as data loss. (Observed: a pipeline
-whose reading stage and moving stage ran concurrently produced dozens of
-such errors; no file was lost, and telling that apart afterwards cost
-more than writing the list first would have.)
+directory" errors have the same shape as data loss.
 
 **Verify a bulk move by conservation**, not by an existence probe: the
 total across `observation-log/` and `archive/` is unchanged by a move.
@@ -1530,9 +1424,7 @@ the felt obligation, and leave nothing on disk. That is worse than
 forgetting: a forgotten write leaves a gap the next checkpoint catches,
 a narrated one reads as a checkpoint already passed, and an invented id
 can later coincide with a real one and become indistinguishable from it
-on audit (observed: a closing summary named two ids that no create had
-printed; the gap surfaced only when the next real write's id snippet
-reported fewer files than the claimed ids implied). So the Surfacing
+on audit. So the Surfacing
 self-check binds on the narration: each id a summary names is one the
 snippet or `scripts/new-observation.sh` printed in this session's tool
 record, and the summary is rendered from a listing of `observation-log/`
@@ -1586,11 +1478,7 @@ record, so before it counts as armed, run the literal event string the project
 actually produces through it as a positive control, and one known non-event
 from the real tool record as a negative control — never invented examples,
 which sample the author's model of the input, the same model that produced
-the gap. Record both results next to the trigger. (Observed: a reminder hook
-whose six patterns were derived from what the deploy script does internally
-never matched the command the project actually types to run it, and had been
-inert on its own target since installation; the same day it fired on a
-read-only command whose test string merely contained a signal word.)
+the gap. Record both results next to the trigger.
 And a counter bound to a single tool is silently inert in every session that does
 not use it — such triggers always need a second, independent path. Nor may a
 trigger pre-empt a delivery decision a later layer already owns ("the recipient

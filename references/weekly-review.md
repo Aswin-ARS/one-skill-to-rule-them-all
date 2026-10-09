@@ -209,10 +209,7 @@ contribute. Forked files need the check at two levels: file-level
 provenance ("this skill is foreign-maintained") and section-level
 provenance ("the section this observation extends is a local addition")
 are separate statements — both answerable from the local copy — and
-routing to upstream-vs-fork depends on the second. (Observed: an
-"upstream contribution" option was offered and chosen for three
-observations extending a section that turned out to exist only in the
-local fork — the decision had to be re-asked with the corrected facts.)
+routing to upstream-vs-fork depends on the second.
 A declined or dismissed approval prompt is NOT approval — and it is not a
 request to skip the asking and proceed either. Treat it as a stop signal
 for the gated actions: halt, then ask in plain chat text what the user
@@ -270,10 +267,7 @@ the observation `open`, with the staged path in a `reference:` note, so
 the next review's presence check closes it once the copy is installed
 rather than re-applying it. What stays escalated is the decision the run
 cannot make — cut a branch or ship from main, and when — never the
-mechanical work. (Observed: read literally, the old proviso would have
-returned a maintainer's own "priority" decision to him as a question and
-left the published skill in the shape he had decided against for another
-cycle; the run staged it anyway, and this paragraph makes that the rule.)
+mechanical work.
 
 Escalate one decision per cluster (Step 3).
 
@@ -458,14 +452,13 @@ need no cleanup at Step 7; a Step 6 run against a list Step 1 failed to
 refresh shows as a delta of dozens, not as a quiet pass.
 
 **Duplicate-id check — nothing else in the process looks for one.** The id
-rules say a collision is "left for the next review to renumber", and until
-now no review step went looking, so a duplicate could sit indefinitely.
+rules say a collision is "left for the next review to renumber", and
+without this check a duplicate could sit indefinitely.
 Worse, it is silently destructive to the review itself: any pass that
 merges per-entry results **keyed by id** — the common shape when the
 reading is fanned out to helpers — collapses the pair into one, and the
 entry that loses is dropped from the review it was waiting for, with no
-error. The collision surfaced, once, only because someone compared a
-merged count against a file count.
+error.
 
 ```bash
 d="[ABSOLUTE PATH]/skill-observations/observation-log"
@@ -583,16 +576,11 @@ discriminated anchors (`<date>-<slug>`, `<date>.2`) and hand-over
 material are valid names, and an index shows only what someone entered,
 so a check that reads only the index reports every unentered item as
 absent — the cost is not lost work but the same work done again by a
-less informed session (observed: an inventory and a diff proposal
-staged for the next session's documentation pass, no entry written; the
-next session inventoried the same places from scratch and missed one
-the staged inventory covered). Then, for each entry in
+less informed session. Then, for each entry in
 `skill-updates/PENDING.md`
 AND each skill directory under `skill-updates/<date>/` — always both,
 never the manifest alone: it may be missing entries, or missing
-entirely, and an absent manifest reads exactly like an empty one
-(observed: eight staged skills across three dated folders, invisible for
-ten days, because no session had ever created the file) — run `diff -rq`
+entirely, and an absent manifest reads exactly like an empty one — run `diff -rq`
 of the staged copy
 against the live skill and classify FOUR ways — because live
 legitimately moves on, so a bare "differs" is not a verdict:
@@ -703,10 +691,7 @@ that reads naturally, "any staged-only line means (c)", misclassifies
 every superseded copy, because a modified line appears on both sides of
 a diff — and it errs in the harmful direction, since (c) is the branch
 that makes the staged copy the base for the next staging, so the next
-edit silently reverts what live gained since (observed: a copy staged
-in the morning, installed, and superseded by a second same-day staging
-was classified (c) on a file-level test; per hunk, both staged-only
-lines had been replaced by supersets in live). The same-day second
+edit silently reverts what live gained since. The same-day second
 staging under Delivery is where this arises — that rule says where the
 second copy is written, this one says how the first is then classified.
 A procedure that mandates an N-way classification owes the reader the
@@ -724,11 +709,7 @@ ahead" are exhaustive only while exactly one side has moved, and a dated
 staging folder is multi-writer by construction, so both having moved is
 the normal case, not the exotic one. Size does not order them either:
 the larger file is the one that grew, which says nothing about what it
-lost. (Observed: a staged copy three weeks old with four sections only
-it carried, against a live file with seven only it carried; (c) as then
-written would have discarded live's seven, and the file-size reading
-argued for (b), which would have discarded the staged four. The merge
-kept all eleven.)
+lost.
 
 Reconcile in BOTH directions every time: lingering-done (installed but
 still listed) and missing-done (staged but never installed) fail
@@ -744,11 +725,7 @@ hand-maintained file records its exceptions as prose that deliberately
 does not look like an entry: a prune, a resolution, the line that says
 nothing is pending. So a pattern excerpt drops exactly the content that
 would refute a drift and keeps the content that suggests one, and its
-confidence is highest where its input is thinnest. (Observed: a session
-read the manifest as headings and list items, reported a round staged for
-two skills and present for one, and told the user the manifest needed
-clearing — twenty lines further down, in prose, it recorded the prune
-that had removed the copy and the statement that no entries were open.)
+confidence is highest where its input is thinnest.
 Excerpt to search, full text to judge.
 
 **A `release/`-shaped staging with no manifest entry is a GATE FAILURE,
@@ -758,11 +735,7 @@ a missing entry, but catching it is a finding, not a repair: a
 release-branch staging is cut together with its manifest entry, its hold
 and its test plan (Step 5, standing rule), and the entry's absence means the
 cutting act skipped its writes, so the hold and the test plan are suspect
-too. Observed, twice: a branch staged for install with no manifest entry
-and the publishing registry's hold still naming the previous, abandoned
-branch — found only because this sweep diffs every recent directory, and
-repaired by a later interactive session a day after the cut, so the
-reconstruction left no trace that the mechanism had failed. Name the
+too. Name the
 directory, name the missing writes, and treat the copy as state (c); if
 the run reconstructs the entry so the rest of the gate can proceed, the
 first line says so and says what was written — a repair the summary does
@@ -808,11 +781,7 @@ that upstream would not take; editing the file in place is not on the
 menu, however writable it is. Provenance is a property of the artefact
 and is stated in its first lines; install location is a fact about this
 machine and says nothing about who maintains the file, so read the block
-before the path (observed: a hand-installed, hand-updated copy of this
-very skill, byte-identical to its published HEAD, met every clause of
-(a) literally, and a review staged ten observations' worth of local
-edits to it — the correct output was upstream reports and no local
-edit). This skill is the standing example: wherever the user is not its
+before the path. This skill is the standing example: wherever the user is not its
 maintainer, `task-observer` is (b). Choosing the companion route may mean
 creating the `{skill}-extras` skill in this review, which the Constraints
 allow as the one exception to "no new skills in a review". Grow the (c) list when an update fails for
@@ -890,8 +859,7 @@ entries target the same member. Then, before anything is presented:
 
 - **Consolidate new-skill candidates by the problem they solve, not by
   name.** Independently logged proposals for the same skill will not look
-  alike, because each is named after the task that surfaced it; eleven
-  working names have collapsed to four skills on reading. Present merged
+  alike, because each is named after the task that surfaced it. Present merged
   clusters with their constituent observation ids.
 - **Existence check before any new-skill cluster is presented.** A
   `proposes_skill:` or a `siblings_checked: none` is an absence claim
@@ -973,10 +941,8 @@ Flag every skill that doesn't yet comply with each active cross-cutting
 principle. A missing `skill-observations/cross-cutting-principles.md` is
 abnormal, not empty: Session Start step 1 creates it, and it is the one
 artefact of that step nothing reads until this step, so its absence has
-had no observable consequence until now — a step that runs without
-leaving a trace is indistinguishable from a step that was skipped
-(observed: months of daily use, a hundred logged observations, the file
-never created). Create it from the template in
+no observable consequence before it — a step that runs without
+leaving a trace is indistinguishable from a step that was skipped. Create it from the template in
 `references/skill-authoring.md` now, say so in the summary's first line,
 and log the skipped step as an observation.
 
@@ -1053,16 +1019,6 @@ promoting them into a skill.** An observation records what one session
 saw; a skill states what is true. Promoting the first into the second
 verbatim launders a sample into a rule, and the rule then outlives every
 chance to notice.
-
-Observed: an entry stated as settled fact that a document's `balance`
-field "is always 0 in this org", and therefore could not be used to detect
-outstanding payments. It was about to be promoted verbatim. One query
-against the live API showed the claim was false — `balance` is populated
-correctly on documents in `pending` status. The original session had
-sampled only `approved` documents, where the vendor's system reports a
-full `amountPaid` and a zero `balance` regardless of actual payments. The
-observation was honest and the sample was unrepresentative, which is the
-normal relationship between the two.
 
 So before a factual claim about an external system enters a skill — a
 schema, an enum, a field's behaviour, a transition rule, "X is always Y" —
@@ -1160,8 +1116,7 @@ the summary carries.
    is a property of the class, visible only to whoever holds the whole
    tree. Before editing, grep the class the report describes across the
    whole bundle and fix every hit: the report supplies the diagnosis, the
-   tree supplies the extent (three reports folded into one release named
-   one, two and eight sites; the classes had four, three and eleven). A
+   tree supplies the extent. A
    completeness claim in a report — "exactly those two", "the one site
    the earlier fix missed" — is the reporter's scope, not a finding, and
    the more carefully it is argued the more it discourages the one grep
@@ -1178,8 +1133,7 @@ the summary carries.
    lists each reworded point beside the original bullet — the same
    point-by-point relocation verification as a moved file, because a
    rewording is a relocation with a change of words, and "the substance
-   was kept" is a feeling, not a check (one such rewording dropped a
-   single qualifier and was caught by the contributor, not the review).
+   was kept" is a feeling, not a check.
    Record in the staging
    manifest both the classification and, per include-now item, the
    reporter's **GitHub login and numeric user ID** — the publishing run
@@ -1269,13 +1223,7 @@ onto `main` as a release; if the cut does not write it, nothing does, and
 its absence is indistinguishable from "not under test".
 
 Three writes, each specified as its own rule, is how the act gets
-performed with the writes it happens to remember (observed twice: first a
-branch cut with its test plan and no hold, the hold reconstructed at the
-next run from the staging ledger and the parked observation with no trace
-in the output that the mechanism had failed; then, two days later, the
-next branch cut with its test plan and neither the hold nor the manifest
-entry, the registry still naming the previous, abandoned branch, both
-repaired by a different session a day later). Under the second-violation
+performed with the writes it happens to remember. Under the second-violation
 rule the remedy is structural: **the cutting act is one scripted command
 whose side effects are the three writes** — the staging anchor with its
 manifest entry, the registry hold, and the parked test-plan observation —
@@ -1297,9 +1245,7 @@ weekday that follows the INSTALL of the branch line by at least a few
 working sessions (the maintainer's observed choice: a Monday install →
 that same week's session, four days later) — not "cut date plus seven",
 which is arithmetic on the wrong event and lands on whatever day of the
-week the arithmetic says (observed: a test plan, a manifest entry, a
-registry row and a summary all naming the same date, a Sunday, corrected
-by the maintainer to the preceding publishing weekday). The test plan's
+week the arithmetic says. The test plan's
 `parked_until:` names that weekday's date explicitly, and every other copy
 of the date — manifest entry, registry row, summary — is derived the same
 way, so they cannot disagree. Where the install lands late in the week
@@ -1317,13 +1263,7 @@ something must change, say explicitly that the previous version is
 superseded and name what to re-read. Prefer an immutable review artefact
 — a diff written to a file is reviewable at the reader's pace and cannot
 be invalidated by later work — and offer it first, not as the recovery.
-Batch corrections behind the review, never in front of it. (Observed: a
-release branch cut, folded, merged, rebased twice, version-corrected and
-message-rewritten across one afternoon while the maintainer was trying to
-review it; every answer they received described a state that no longer
-existed by the time they acted on it, and the branch was deleted unused —
-the content survived only because it had been staged to the workspace
-separately.) Work done while someone is reviewing is not parallelism; it
+Batch corrections behind the review, never in front of it. Work done while someone is reviewing is not parallelism; it
 is contention for the same object, and every revision spends the
 reviewer's attention again from the beginning.
 
@@ -1436,12 +1376,7 @@ can still occur, the entry is `partially-applied`, whatever the
 suggestion asked for; for an observation about a manual step or a
 missing automation the test is one question — after this change, does
 anyone still have to do the step by hand, and if an automation exists,
-what calls it? (Observed: a script that already did the step existed;
-the observation asked only that it be documented; the paragraph was
-written, the entry marked `actioned`, nothing called the script, and
-the backlog it was meant to clear built up again until the user asked
-why — the edited skill's own rule that a check started by hand is not a
-check sat a few paragraphs from the edit.) An observation closes on its
+what calls it? An observation closes on its
 problem, not on its proposal. Mark already-applied entries `actioned`
 with a resolution noting that a prior session applied them, and leave
 the section alone. A `partially-applied` entry names the remainder in
@@ -1541,12 +1476,6 @@ natural brief is the changed files, the diff and a log. That is exactly
 wrong when the fix's central claim is about something it did **not**
 change: an assumption about how a caller behaves, what a default is, what
 some other file guarantees.
-
-Observed: a reviewer could not find the caller whose behaviour the fix
-assumed, and had to return its single most important finding — whether the
-central assumption held — as "not verifiable". The minor findings came back
-fine. The review ran, produced output, and silently failed at the one thing
-it was for.
 
 So build the brief from **what the claim depends on**, not from what the
 change touched: name the fix's load-bearing assumption in one line, and
@@ -1648,11 +1577,7 @@ any count. A file the review itself archived since Step 1 shows under
 finding.
 Re-run the Step 1 duplicate-id check over the new listing as well: this
 re-scan is not redundant with Step 1, because the collisions it exists to
-catch are the ones created *during* the run (observed: Step 1 found and
-renumbered one collision; Step 6's re-scan found a second, new one —
-written mid-run by a parallel interactive session at an id the directory
-and the floor had both passed an hour earlier — that no earlier step could
-have seen). A run that trims this step as duplicate work removes the only
+catch are the ones created *during* the run. A run that trims this step as duplicate work removes the only
 check positioned after the writes it is checking for.
 
 Then, in each applied observation's frontmatter set
@@ -1776,10 +1701,7 @@ an event that cannot occur turns the run's one deliverable into a hang.
   `proposes_skill:` are validated at write time, and that validation can
   return the wrong answer: a session in a stale checkout, or one resolving
   against the wrong install, judges an existing skill absent and files the
-  observation under `proposes_skill:` instead. Observed: seven entries
-  logged with `skill: []` and `proposes_skill: [<name>]` on the honest
-  judgement that the skill did not exist — it did, in commits the session's
-  checkout was 160 behind. Left alone, they sit under a new-skill candidate
+  observation under `proposes_skill:` instead. Left alone, such entries sit under a new-skill candidate
   for a skill that already exists, and every later review re-reads them the
   same way. A review that establishes the target does exist may correct
   those two fields, and records the correction in `resolution:`. Nothing
@@ -1805,12 +1727,6 @@ send time from live output. The prose is not. A paragraph written at draft
 time naming what some other branch or commit still needs will be sent
 verbatim, and it reads with exactly the authority of the measured figures
 beside it.
-
-Observed: a template whose line counts, byte counts and evidence figures
-were all correct at send time, alongside a fixed paragraph saying a
-particular branch was still pending a change and describing what would have
-to happen at merge. By the time the automated run sent it, that branch had
-landed and the change was already present in the delivered result.
 
 So in anything drafted for later sending: **state only what is measured at
 send time, or nothing.** Claims about the state of other branches, commits,
@@ -1880,12 +1796,7 @@ until the user installs it. **Keep-two rule** — a fixed Delivery step of
 every review, run after packing and before the Step 8 summary, with the
 delete grant requested in the same step: for any skill, keep only
 the two most recent staged copies under `skill-updates/` **that have been
-installed** — never prune an uninstalled one. The invariant two lines
-above says nothing goes live until the user installs it; the prune
-originally counted rounds regardless, so a user who received three staged
-updates for one skill and installed none of them — a plausible run when
-staging keeps happening and installation waits — lost the oldest, and the
-reviewable work in it, to a rule that reads as tidying. Classify each
+installed** — never prune an uninstalled one. Classify each
 copy with the reconciliation gate's comparison first ("Compare with the
 installer's frontmatter quoting normalised" — a copy differing only in that quoting is (a)): prune only copies
 that came back **(a) identical** or **(b) superseded**; a copy in state
@@ -1971,10 +1882,7 @@ the second round a discriminated anchor (`<date>-<slug>` or `<date>.2`)
 with its own manifest entry, and count rounds rather than days when the
 keep-two rule prunes. The anchor is chosen BEFORE the Step 5 seed — the
 snippet's `s=` line takes the discriminated path — not discovered afterwards
-from this paragraph. (Observed: a second apply round for one skill started
-the same evening the first had been installed; the date-keyed anchor pointed
-at the installed copy, and only a manual check of the manifest state
-prevented seeding over it.)
+from this paragraph.
 
 **The previous staged state is part of the deliverable — snapshot
 before any second pass, and never let a reflow ride along with
@@ -1989,11 +1897,7 @@ that rewrites a staged skill, copy the directory beside itself as
 sweep and the keep-two prune cannot mistake it for a staged copy; it
 goes when its anchor goes. And keep whitespace passes out of content
 passes: a re-wrap moves every line, so a plain diff reports total churn
-and the few lines that actually changed are invisible in it (observed:
-a delegated density pass cut ~4% of the words and re-wrapped every file
-to a uniform width to make its line count honest — two files it changed
-by 0% and 1.2% showed as fully rewritten, and no pre-pass baseline
-existed). Content first, reviewed; reformat as a separate step whose
+and the few lines that actually changed are invisible in it. Content first, reviewed; reformat as a separate step whose
 diff can be discarded wholesale; a brief that delegates one says which
 of the two it is and forbids the other. Reviewability is a property of
 the pair of states, not of the final artefact — a process that produces
@@ -2057,10 +1961,7 @@ and an id is qualified with its workspace key wherever it is referenced
 from another log. A note in an artefact whose lifetime ends at install
 cannot carry a follow-up: nothing in the review reads manifest notes as a
 queue, and the one place the review is guaranteed to delete is the one
-place it is tempting to write the leftover backlog. (Observed: two sessions
-on two days each wrote a follow-up into the manifest; the first was found
-only because the manifest happened to be read before the next review, the
-second was caught in the same turn and re-filed as a parked observation.)
+place it is tempting to write the leftover backlog.
 The gate stays absolute — the fix for a safety gate people are tempted to
 bypass is reducing the friction that creates the temptation, not
 loosening the gate. An optional git-based staging medium is described in
