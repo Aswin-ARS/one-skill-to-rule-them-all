@@ -888,10 +888,10 @@ re-check exists, do not record the value — record how to obtain it.
    candidate over the existing corpus first and record, per rule: (a)
    hits on today's corpus, (b) true defects among them, (c) the
    normalisation needed to remove the rest. None of that is knowable from
-   the idea alone — measured on one corpus, one candidate class produced
-   35 hits that were nearly all locale artefacts, two produced 0 hits
-   (free locks, addable today), one produced 7 of which 2 were defects
-   and 5 legitimate content a naive rule would flag forever. A proposed
+   the idea alone: one candidate class fires mostly on artefacts of the
+   corpus, another finds nothing and is a free lock to add today, and a
+   third mixes a few real defects with legitimate content a naive rule
+   would flag forever. A proposed
    guard is a claim about the future, and the cheapest evidence for it
    already exists in the artefact being audited; a rule with an
    unmeasured false-positive rate is a proposal to make people ignore a
