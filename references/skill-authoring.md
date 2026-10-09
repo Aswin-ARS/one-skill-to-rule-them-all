@@ -965,12 +965,8 @@ re-check exists, do not record the value — record how to obtain it.
    `chmod -R u+w` on the staged path. A workaround documented as
    equivalent to another must be re-verified per failure surface — an
    option that works for single files can still fail for directory trees.
-   Use the exact snippet in `weekly-review.md` Step 5 rather than
-   reconstructing it: strip the live prefix **without** a trailing slash so
-   the top-level directory maps to the staged root, and keep `IFS=` on the
-   read loops for paths containing spaces. Both are easy to get wrong from
-   this description alone, and the resulting phantom directories cannot be
-   deleted on a mount that denies `unlink`.
+   Use the exact snippet in `weekly-review.md` Step 5; its notes explain
+   the two details that are easy to get wrong.
 7. Match process rigour to the change: complex/open-source/uncertain design
    → use the skill-creator if available; internal skills with requirements
    already established in conversation → write directly, flagging
@@ -1242,10 +1238,8 @@ weekly-review.md Step 5): a staged copy that never went live has no live
 file to diff against, so nothing else in the procedure surfaces it, and
 a from-scratch draft beside it drops whatever it carried.
 
-Use the skill-creator when available, passing the observation(s) as the
-brief. Determine type early: open-source → strip and generalise; internal →
-include specifics freely; uncertain → default open-source and let the user
-add internal detail afterwards.
+Where the skill-creator is used (editing rule 7), pass the observation(s)
+as its brief.
 
 **First decide whether the skill joins a family, and if it does, read the
 siblings before drafting.** Intent → interview → draft is right for a
@@ -1297,9 +1291,7 @@ one mover, and require that mover to produce **both** halves of every
 section it splits (the core text and the companion's remainder) plus the
 coverage table from "Verifying relocations and restructures". The
 reconciliation notes, not the diffs, are the deliverable the maintainer
-reviews. Two independent movers flagging the same ambiguity means the
-brief is the defect: fix the brief and re-issue rather than adjudicating
-the outputs.
+reviews.
 
 **A script that ships with a skill is verified by a hostile test, not a
 normal run.** Each of these failure shapes passes an ordinary run and is

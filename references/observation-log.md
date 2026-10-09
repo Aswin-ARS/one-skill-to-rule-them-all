@@ -494,16 +494,11 @@ Retrieval has to happen where the decision is made.
 ### An empty scan over a non-empty log is a broken command
 
 **An empty scan in a log known to be non-empty is a broken command until
-proven otherwise**, never the finding "no relevant observations". The
-scan's guard is what settles which of the two it is, and both halves of
-its independence are load-bearing: the file count comes from a literal
-path rather than from the variable the parse loop uses, and the assertion
-compares two numbers derived by different means — halt if files exist and
-nothing parsed. Keep that independence when adapting the scan, and keep
-every path re-derived inside the same tool call. The reasoning and the
-reports each rule came from are in "Guard the read, not just the write"
-and "Snippets spanning several tool calls must re-derive their own paths"
-above.
+proven otherwise**, never the finding "no relevant observations": halt if
+files exist and nothing parsed, and keep the two counts independent and
+every path re-derived inside the same tool call ("Guard the read, not
+just the write"; "Snippets spanning several tool calls must re-derive
+their own paths", above).
 
 **A partial parse is lost entries, not a smaller log.** The guard halts
 only when nothing parsed. A numbered file with no header — zero bytes,
@@ -723,11 +718,6 @@ This is why the counts and the trace run first. Three consequences:
   The session proceeds without the backlog in context; it is not equivalent
   to a scan that ran.
 
-The general form belongs with the instrument guard below: *the instrument
-was not permitted to run* is a third state beside *it ran and found nothing*
-and *it ran and broke*. All three produce an empty result, and only the
-middle one is a fact about the world.
-
 ### A refused snippet is a degraded path, never a skipped step
 
 The refusal above is of the print alone; a harness that vets command
@@ -812,13 +802,6 @@ nothing in the ordinary workflow asks — so `skill:` collapses to the one
 skill in front of you and the family diverges quietly. The divergence has
 no symptom until someone reads two members side by side, which happens at
 a drift audit, months later.
-
-**The cheapest propagation signal is a phrase.** A rule that declares
-itself generic *inside one artefact* — "this applies to any file-writing
-script, not just X", "true of every companion in this family" — has
-already told you it belongs to every sibling. Treat that phrasing as an
-automatic multi-skill flag; it costs nothing to notice and it catches the
-case the name-removal test is only a proxy for.
 
 The `skill:` field is already a list, so multi-skill observations are
 expressible. The mechanism exists; the *check* does not — and a list field
@@ -969,11 +952,8 @@ what it rests on — the file and section read in that sibling — or says
 the exclusion. Example:
 `siblings_checked: "list-commands: render, pick, close — render added; pick excluded (pick.md §2, selects by stable id); close excluded (assumed)"`.
 
-**4. Propagation and drift audit at review time** — see
-`weekly-review.md` (Steps 3 and 4). The first three parts only cover what
-happens from now on; the mechanical audit is the only one that catches
-drift predating the rule or introduced by a skill authored outside the
-log. A registry can go stale; a grep cannot.
+**4. Propagation and drift audit at review time** — `weekly-review.md`,
+Steps 3 and 4.
 
 ## Assigning an id
 
@@ -1043,14 +1023,7 @@ derivation. `sort -n` needs no stripping; the arithmetic does. The floor
 is read as digits only, so a floor file written with a CRLF, padding or
 spaces still reads as its number instead of as nothing.
 
-`awk`, `sed -n`, `grep -oE`, `sort -n`, `mv` and `printf` are POSIX,
-and the one non-POSIX construct is deliberate: `10#` in the arithmetic
-is a bash extension, the shortest form that keeps a zero-padded prefix out
-of octal — so run the snippet under `bash`, not `sh` (under `dash` the
-derivation stops with an arithmetic error before any file exists). It runs
-unchanged on macOS, Linux and Git Bash. The sweep's date comparison is an
-`awk` string comparison of ISO dates, which sort lexically, so it needs no
-`date` arithmetic. A skill that hands the agent a
+A skill that hands the agent a
 shell command owns that command's portability: lead with the portable
 form, never offer it as a footnote the agent reaches for after the primary
 has failed — and make any command that derives a number from a file fail
@@ -1264,13 +1237,8 @@ a missing target: that converts a migration signal into corruption
 `migration.md` on coexistence with live sessions). A writer's model of
 shared mutable state is only as fresh as its last read.
 
-**This covers reads as well as writes.** A retrieval that comes back empty
-over content you know exists — the session-start scan, a filter for
-observations naming the current skills, a grep for a prior finding — is the
-same signal wearing different clothes, and it is the more dangerous half,
-because a broken read produces no error and its result ("nothing relevant")
-is a legitimate possible answer. Re-probe before acting on it (see "Guard
-the read, not just the write" above).
+**This covers reads as well as writes**: an empty read over content you
+know exists is the same signal ("Guard the read, not just the write").
 
 ### Why this is the entire concurrency story
 
@@ -1558,14 +1526,8 @@ date written to that field instead of being archived; the embedded sweep
 deliberately skips such files (its date check fails closed), so that
 one-field repair is a separate, careful edit of that file alone.
 
-**`parked` is exempt from archival — deliberately.** It is the one status
-that means "decided" without meaning "resolved", so it satisfies neither half
-of the gate: not in the resolved set, and it carries no `resolved:` date. Do
-not infer from "it has left the work queue" that it should be archived, and do
-not stamp it with a `resolved:` date to tidy it away — a parked entry has to
-stay in `observation-log/` for the review to re-check its `parked_until:`
-condition (`weekly-review.md`, Step 1). It archives only once it is actually
-actioned, declined or superseded.
+**`parked` never archives**: it is not resolved and carries no `resolved:`
+date — never stamp one on it to tidy it away (The `parked` status, above).
 
 Archival is a set of plain `mv` operations, one file at a time. Moving one
 resolved file cannot affect any other observation. The safe form is the

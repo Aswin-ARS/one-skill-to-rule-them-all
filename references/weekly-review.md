@@ -281,9 +281,7 @@ returned a maintainer's own "priority" decision to him as a question and
 left the published skill in the shape he had decided against for another
 cycle; the run staged it anyway, and this paragraph makes that the rule.)
 
-Escalate one DECISION per cluster, never the same decision twice — cluster
-the OPEN entries before the escalation list is written (Step 3), and list
-the member observation numbers under each decision.
+Escalate one decision per cluster (Step 3).
 
 ## Steps
 
@@ -686,21 +684,6 @@ never a reason to re-stage. Any other change still surfaces; waving a
 known-looking diff through by eye is the habit that would hide it. The
 validator's pack step emits the quoted `name:`, so most installs come back
 byte-identical and the normalisation is the backstop.
-
-**A staged state file is reconciled by its recorded hash, not by a diff.**
-For each file under `skill-updates/<date>/_target-files/` (Delivery, "State
-files are staged as a patch"), re-hash the live file and compare it with
-the byte size and sha256 the manifest entry recorded at staging. Hash
-unchanged → the instruction may say "apply the patch — copy is safe", since
-the patch applies to exactly the file it was made from. Hash changed → the
-gate reports "staged patch, live file has moved — apply the N changed
-lines, do not copy", with N counted from the patch, and
-rewrites the entry's instruction to say so. Every added line of the patch
-already present in live, and every removed line already gone → installed;
-remove the entry. An install instruction is re-derived each time it is
-repeated, never carried forward verbatim: nothing in a ledger expires on
-its own, so a line that was correct at staging turns destructive without
-changing a word once the live file moves on.
 
 **A staged state file is reconciled by its recorded hash, not by a diff.**
 For each file under `skill-updates/<date>/_target-files/` (Delivery, "State
@@ -1310,10 +1293,8 @@ an assertion, not a default**: a row that has ever carried one records
 when it was cleared and by which merge, so "no field" is distinguishable
 from "nobody wrote the field". The cycle **cross-checks the skill's
 staging directories** for a `release/` staging newer than the row's
-last-cleared date and asks rather than assumes when it finds one. And this
-review's reconciliation gate (Step 1) treats a `release/`-shaped staging
-with no manifest entry as a gate failure in the summary's first line,
-never as a copy to reconstruct silently.
+last-cleared date and asks rather than assumes when it finds one. (Step
+1's gate treats a manifest-less `release/` staging as a gate failure.)
 
 **The merge review is a fixed weekday, anchored on the install, not the
 cut.** The merge decision is taken in the publishing session, which runs
@@ -1845,44 +1826,26 @@ tickets or sessions either come from a value the run computes as it sends,
 or come out. A sentence that was true when written is not a safe default —
 it is the one part of the message nothing re-checks.
 
-Save each updated skill to
-`[workspace folder]/skill-updates/[date]/[skill-name]/` — the FULL skill
-directory (SKILL.md plus references/, scripts/, assets/ where present),
-never SKILL.md alone — and present it for review and installation using
-whatever file-presentation capability the environment offers (see the
-environment table in `references/environments.md`); where there is none,
-report the staged path and a change summary in chat and let the user
-review and install from there.
-Never write to the live skill directly, even where the skills directory is
-writable — staging-only is a deliberate safety property of the review loop
-(nothing goes live without the user's sign-off), not a filesystem
-constraint, and it is absolute for skills because a skill has an install
-step; non-skill files are split by owner (below). **Every** staged skill is packed into a `.skill` bundle and
-presented as that bundle — one delivery format for all of them,
-regardless of size or file count. A format that switches on the shape of
-the artefact creates two conventions for one thing and a boundary every
-consumer has to re-derive; one format costs nothing on a single-file
-skill and removes the whole "a bare SKILL.md silently truncates a
-multi-file skill" failure class at the other end.
+Stage and present each updated skill per `references/skill-authoring.md`,
+editing rule 5 — the full directory, packed into a `.skill` bundle,
+staging-only in every environment; the presentation tool per environment
+is in `references/environments.md`, and non-skill files are split by owner
+(below).
 Pre-delivery gate (run as the last step
-before presenting): (1) grep the staged SKILL.md body for `references/`,
-`scripts/`, `assets/` paths and fail the delivery if any referenced file
-is missing from the staged set — a backticked path counts as this skill's
-own only when it is UNQUALIFIED, so a file belonging to another skill is
-cited as `<skill-name>/references/<file>` and passes untouched; that
-qualification is the convention, and re-wording a genuine cross-reference
+before presenting; the authoring detail for items 1–5 is in
+`references/skill-authoring.md`, editing rule 5): (1) every UNQUALIFIED
+`references/`, `scripts/`, `assets/` path in the staged SKILL.md body has
+its file in the staged set — re-wording a genuine cross-reference
 until the backtick no longer starts with the prefix is disguising a
 reference to satisfy a linter, not fixing a defect; (2) the artefact presented is the
 bundle — bare file links fail this gate — and every staged bundle is
 presented (Step 8's staged/presented count); the number of cards is never
 a reason to present fewer, since one call carries them all and each card
-is an install decision the user makes either way; (3) measure each staged skill's frontmatter
-description (the folded value, not the raw YAML block) and fail the
-delivery above 1024 characters, with a soft warning above ~900 —
-measure every skill in the set, not just the one that failed; (4) `name`
+is an install decision the user makes either way; (3) each staged skill's
+folded frontmatter description is at most 1024 characters (soft warning
+above ~900); (4) `name`
 is kebab-case, matches the directory, and the frontmatter parses; (5) the
-bundle's member paths use `/`, checked on raw bytes (Windows packers write
-`\`, and normalising readers hide it); (6) exactly one frontmatter block
+bundle's member paths use `/`, checked on raw bytes; (6) exactly one frontmatter block
 — a second `---` block or stray `name:`/`description:` lines directly
 after the first is a duplicated header that every field check passes by
 construction; (7) no edit residue in any text file of the bundle,
@@ -1905,34 +1868,22 @@ published tree — justifications stated as failure shapes, examples across
 verticals.
 `scripts/validate-skill-bundle.py`
 asserts all seven and packs a well-formed bundle — run it where Python is
-available. It also enforces each skill's OWN declared core ceiling
-(`core_max_lines:` in its frontmatter, or a `.core-ceiling` file —
-`references/skill-authoring.md`, Lean Content), and **the pack step is
-never bypassed for a ceiling failure**: a skill that fails its own declared
-ceiling is trimmed back under it, moving content to a reference file, and
-re-validated — or, where the ceiling sits more than the tolerance above a
-trimmed core, the ceiling is lowered to the count; a skill with no declared ceiling cannot fail it and is only
-reported. Hand-packing a bundle to skirt the validator is the exact failure
-the gate exists to prevent (observed: three skills packed by hand with a
-mirror of `pack()` when a ceiling that was then a constant in the script
-failed them — every other check passed, and the constant was the defect,
-but the bypass was the wrong response to it). Where the bundle ships a public extract of a private file
+available. It also enforces each skill's own declared core ceiling
+(`references/skill-authoring.md`, Lean Content); a ceiling failure is
+fixed by trimming or lowering, never by bypassing the pack step —
+hand-packing a bundle to skirt the validator is the exact failure
+the gate exists to prevent. Where the bundle ships a public extract of a private file
 (this skill's `references/starter-principles.md`), run the
 confidentiality scan over that extract here too: it is the one file in
 the bundle whose content is copied from a private source, so the
-authoring-time sweeps never see it. Sweep build artefacts (`__pycache__/`, `*.pyc`, `.DS_Store`,
-`.~lock.*`) and version-control directories (`.git/`, `.hg/`, `.svn/`)
-before zipping and read the archive listing back after, for
-leaked artefacts and for path separators. **Packing is the LAST write to
+authoring-time sweeps never see it. Sweep build and VCS artefacts and read
+the listing back (`references/skill-authoring.md`, editing rule 5). **Packing is the LAST write to
 a staged skill.** The bundle is the deliverable, so an edit to the
 directory after packing leaves two versions: the bundle the user
 installs and the directory the next review diffs. After packing, the
 bundle's members must equal the staged directory byte for byte — `--pack`
 verifies the round trip and exits non-zero on a mismatch — and any edit
-after that means re-pack and re-check before presenting. When seeding staged
-copies from the read-only mount, `chmod -R u+w` the staged path first —
-the mount's read-only mode travels with the copy, for directories as
-well as files. Do not edit a skill's files in place — nothing goes live
+after that means re-pack and re-check before presenting. Do not edit a skill's files in place — nothing goes live
 until the user installs it. **Keep-two rule** — a fixed Delivery step of
 every review, run after packing and before the Step 8 summary, with the
 delete grant requested in the same step: for any skill, keep only
@@ -1947,11 +1898,8 @@ copy with the reconciliation gate's comparison first ("Compare with the
 installer's frontmatter quoting normalised" — a copy differing only in that quoting is (a)): prune only copies
 that came back **(a) identical** or **(b) superseded**; a copy in state
 (c) or (d) is uninstalled work and is kept whatever its age, and named
-in the summary so it does not accumulate invisibly. For the prunable
-ones, **request the delete grant on the target directory, then delete —
-never rename into a holding folder** (if the permission stream fails in
-an autonomous run, leave them in place and name them in the report as
-"pending deletion — grant needed"). The rule is scoped to staged skill copies,
+in the summary so it does not accumulate invisibly. Delete the prunable
+ones as Step 5 says: the delete grant first, never a holding folder. The rule is scoped to staged skill copies,
 not to date directories: before pruning a directory, list what else is in
 it — an assembly script, a verification script, working notes — and move
 anything that is not a staged skill copy aside first, or leave the
@@ -2068,11 +2016,7 @@ turn, creating the file when it
 is absent, and never starting it at today: on creation, list every skill
 directory already under `skill-updates/<date>/` that is not identical to
 live, so the manifest's first state describes the tree it indexes rather
-than the one delivery that happened to create it (an appender that
-assumes the file is there writes nothing, as the aggregate-run rule
-above already says of a participant workspace; an index whose absence is
-indistinguishable from "nothing pending" cannot be the mechanism that
-stops work being forgotten). For a delivery, the entry carries the skill, the date
+than the one delivery that happened to create it. For a delivery, the entry carries the skill, the date
 directory, the producer (which session or scheduled run staged it), the
 observation ids applied, and a per-change summary
 (observation id → section touched → one-line rationale). The install
@@ -2093,9 +2037,7 @@ per-change summary is what lets the user review a full-file diff
 quickly, which is what raises the install rate. Entries are removed by
 the staged-work reconciliation gate (Step 1, mirrored in Session Start
 step 6) when the staged copy proves identical to live or superseded by
-it, or when the keep-two rule prunes the directory — never "at install
-time", because no session observes the install; the session that reads
-the manifest owns its cleanup.
+it, or when the keep-two rule prunes the directory.
 
 The manifest carries three kinds of entry and no others: provenance,
 install instructions, and — in an aggregate run over several logs — the
