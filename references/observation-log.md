@@ -1,5 +1,7 @@
 # The observation log — storage layout, scripts and rationale
 
+Load triggers: creating the workspace or setting up the log; archiving, or verifying a bulk move; an id or a frontmatter field looks wrong or drifts; writing or changing any instrument that reads the log; why snippets take a spaced path and run under bash; the per-skill check feels redundant after the session-start scan; the scan's guard fires or the scan is being adapted; moving the scan's print; resolving an observation's siblings (skill families); why the checkpoints are writes; adding or changing an enforcement trigger; editing an existing observation's body; the id guard, the sweep's count or the noclobber create fires; skipping the id snippet feels reasonable or two files share an id; batching or parallelising observation writes; writing after a structural probe came back empty; setting, reviewing or unparking a parked status; setting `reference:`; resolving, dismissing, fixing or citing an observation; partially actioning a multi-skill observation (carrier pattern)
+
 The core skill carries the per-invocation rules: where the log is, how to
 name and number a file, the frontmatter format, and the archival rule.
 This file holds the layout in full, the helper snippets, and the reasoning

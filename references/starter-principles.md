@@ -1,5 +1,7 @@
 # Starter Cross-Cutting Principles (optional seed)
 
+Load triggers: the starter-set reconciliation is due (marker absent or older than this file's set)
+
 Starter set version: 3
 
 This file is NOT the adopter's principles file. It is an optional seed:

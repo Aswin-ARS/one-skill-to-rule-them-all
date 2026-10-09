@@ -1,5 +1,7 @@
 # Migrating a pre-3.0 single-file log
 
+Load triggers: the Session Start Protocol finds a pre-3.0 `log.md` and no `observation-log/`
+
 Upgrade-only. Versions before 3.0.0 kept every observation in one file,
 `skill-observations/log.md`, with `### Observation N:` headers. Version
 3.0.0 stores one file per observation under

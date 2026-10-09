@@ -1,5 +1,7 @@
 # Comprehensive Review (scheduled or fallback)
 
+Load triggers: a review runs (scheduled, an opted-in fallback, or asked for); the start-up line counting open observations as distinct findings; judging a staged-work ledger entry at session start
+
 Cross-checks all OPEN observations against all skills, propagates
 cross-cutting principles, and applies improvements that don't need user
 input to staged copies — never to live skills. Two modes:

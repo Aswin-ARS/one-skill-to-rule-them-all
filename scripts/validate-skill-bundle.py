@@ -534,52 +534,225 @@ def check_reference_indexes(skill_dir, fails):
             fails.append(f"{p.name}: heading not in its own Contents index: {h!r}")
 
     core = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+    check_reference_shape(skill_dir, core, fails)
 
-    # --- Reference shape: reported, never gated -----------------------------
-    # The core's size ceiling does not transfer to reference files, because
-    # their cost is conditional: a long file loaded once a month is cheap. The
-    # signal that matters is how many DISTINCT episodes pull a file in, since
-    # every one of them pays for the whole file. Measured on this bundle, the
-    # largest reference had a single trigger and was correctly shaped while a
-    # smaller one carried many — so a size rule would have flagged the healthy
-    # file and missed the mis-shaped one. The figures themselves are whatever
-    # the `reference shape` line below prints on this run; never copy them
-    # into this comment, where they go stale.
-    #
-    # Only pointers that name a section (`references/x.md` ("Heading")) are
-    # counted, so a file the core cites by filename alone reads 0; the label
-    # says so rather than presenting the figure as every load trigger.
-    #
-    # Printed rather than enforced on purpose: one snapshot is not enough to
-    # site a threshold, and the same measurement already overturned the rule
-    # it was meant to support. Let a series accumulate, then decide.
-    triggers = {}
-    for m in re.finditer(r'`references/([a-z-]+\.md)`[^(]{0,40}\("([^"]+)"\)', core, re.S):
-        triggers.setdefault(m.group(1), set()).add(norm(m.group(2)))
-    if refs.is_dir():
-        rows = []
-        for p in sorted(refs.glob("*.md")):
-            n = len(p.read_text(encoding="utf-8").splitlines())
-            t = triggers.get(p.name)
-            rows.append((p.name, n, len(t) if t is not None else None))
-        worst = max((t for _, _, t in rows if t is not None), default=0)
-        print("reference shape (lines / distinct section-named load triggers; not gated; "
-              "n/a = no pointer naming a section): "
-              + ", ".join(f"{n}={ln}/{'n/a' if t is None else t}" for n, ln, t in rows))
-        if worst >= 10:
-            print(f"note: one reference file carries {worst} distinct section-named load triggers — "
-                  f"split by episode is indicated when this grows; size is not the signal")
-
-    for m in re.finditer(r'`references/([a-z-]+\.md)`[^(]{0,40}\("([^"]+)"\)', core, re.S):
-        fname, heading = m.group(1), norm(m.group(2))
+    # Both pointer forms name a target: `references/x.md` ("Heading") and
+    # (`references/x.md`, "Heading"). The second form was invisible to this
+    # check, so its targets went unverified. A pointer may name a heading up
+    # to its ` — ` qualifier, as a Contents entry may.
+    named, _ = core_pointers(core)
+    for fname in sorted(named):
         target = refs / fname
         if not target.is_file():
             fails.append(f"SKILL.md points at a reference that does not exist: {fname}")
             continue
         heads = {norm(x) for x in re.findall(r"(?m)^#{2,4}\s+(.+?)\s*$",
                                             defence(target.read_text(encoding="utf-8")))}
-        if heading not in heads:
-            fails.append(f"SKILL.md pointer has no target heading: {fname} -> {heading!r}")
+        for heading in sorted(named[fname]):
+            if not any(h == heading or h.startswith(heading + " — ") for h in heads):
+                fails.append(f"SKILL.md pointer has no target heading: {fname} -> {heading!r}")
+
+
+# --- Reference-file growth barrier ---------------------------------------------
+# The core's ceiling does not transfer to reference files as a size rule,
+# because their cost is conditional: a long file loaded once a month is cheap,
+# and the signal that matters is how many DISTINCT episodes pull a file in,
+# since every one of them pays for the whole file. Measured on this bundle,
+# the largest reference had a single trigger and was correctly shaped while a
+# smaller one carried many — a size rule alone flags the healthy file and
+# misses the mis-shaped one. The figures are whatever the `reference shape`
+# line prints on this run; never copy them into this comment.
+#
+# What a ceiling CAN do is stop silent growth, so the barrier combines the
+# two: every reference file of a skill that opts in carries a line ceiling,
+# and exceeding it fails and forces a decision whose remedy is chosen by the
+# file's load-trigger count —
+#   * more than SPLIT_TRIGGER_THRESHOLD triggers: split by episode;
+#   * that many or fewer: trim, or raise the ceiling with a dated one-line
+#     reason written beside the number.
+# Size alone never forces a split, so a single-episode file is never split to
+# meet a size rule. The ceiling follows trims down with the core's tolerance.
+#
+# Opt-in, per skill: a `references/.ceilings` file holds one line per file —
+#   <file.md> <ceiling> [<YYYY-MM-DD> <reason for the last raise>]
+# with `#` comments and blank lines allowed. A skill without one has not opted
+# in: the shape line is printed and nothing is gated, so the public validator
+# imposes no budget on a skill whose author never set one.
+#
+# The trigger count is DECLARED, not inferred: each reference carries one
+# `Load triggers: a; b; c` line in its header (before its first `## `
+# heading), and the count is the number of distinct entries. Pointer scanning
+# cannot be exact — one episode can be cited from several places, and a
+# filename-only pointer names no section at all — so the scan is kept only as
+# the fallback figure for a file that declares nothing (printed with `~`) and
+# as a cross-check that a declaration has not fallen behind the core.
+REF_CEILINGS_FILE = ".ceilings"
+SPLIT_TRIGGER_THRESHOLD = 12
+LOAD_TRIGGERS_RE = re.compile(r"(?m)^Load triggers:[ \t]*(.*?)[ \t]*$")
+REF_CEILING_LINE_RE = re.compile(
+    r"^(?P<file>[^\s/]+\.md)[ \t]+(?P<ceiling>\d+)"
+    r"(?:[ \t]+(?P<date>\d{4}-\d{2}-\d{2})[ \t]+(?P<reason>\S.*?))?[ \t]*$")
+# `references/x.md` ("Heading") — up to 40 characters between, newlines
+# included, no backtick — and the parenthesised (`references/x.md`, "Heading").
+REF_POINTER_RE = re.compile(r'`references/([a-z0-9-]+\.md)`(?:[^(`]{0,40}\(|,\s*)"([^"]+)"')
+REF_ANY_POINTER_RE = re.compile(r"`references/([a-z0-9-]+\.md)`")
+
+
+def core_pointers(core):
+    """({file: {section names}}, {file: number of filename-only pointers}).
+
+    Frontmatter is skipped. Filename-only pointers are counted once per
+    paragraph or list item, so a sentence that cites a file twice is one
+    pointer, not two."""
+    m = re.match(r"(?s)^---\n.*?\n---\n", core)
+    body = core[m.end():] if m else core
+    named, named_at = {}, set()
+    for pm in REF_POINTER_RE.finditer(body):
+        named.setdefault(pm.group(1), set()).add(" ".join(pm.group(2).split()))
+        named_at.add(pm.start())
+    # block index for each line: a blank line or a list-item start opens one
+    block, starts = 0, []
+    for line in body.splitlines(True):
+        if not line.strip() or re.match(r"^\s*(?:[-*]|\d+\.)\s", line):
+            block += 1
+        starts.append(block)
+    offsets = [0]
+    for line in body.splitlines(True):
+        offsets.append(offsets[-1] + len(line))
+    unnamed = {}
+    for pm in REF_ANY_POINTER_RE.finditer(body):
+        if pm.start() in named_at:
+            continue
+        ln = body.count("\n", 0, pm.start())
+        unnamed.setdefault(pm.group(1), set()).add(starts[ln] if ln < len(starts) else -1)
+    return named, {f: len(b) for f, b in unnamed.items()}
+
+
+def declared_load_triggers(text):
+    """The distinct entries of the header's `Load triggers:` line, or None."""
+    head = re.split(r"(?m)^## ", text, maxsplit=1)[0]
+    m = LOAD_TRIGGERS_RE.search(head)
+    if not m:
+        return None
+    seen = []
+    for t in m.group(1).split(";"):
+        t = " ".join(t.split())
+        if t and t.lower() not in (s.lower() for s in seen):
+            seen.append(t)
+    return seen
+
+
+def read_ref_ceilings(refs, fails):
+    """{file: (ceiling, date, reason)} from references/.ceilings, or None when
+    the skill has not opted in. Every malformed line fails: a skill that
+    opted in and wrote a line the gate cannot read must not pass ungated."""
+    import datetime
+    f = refs / REF_CEILINGS_FILE
+    if not f.is_file():
+        return None
+    out = {}
+    for i, raw in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        m = REF_CEILING_LINE_RE.match(line)
+        where = f"references/{REF_CEILINGS_FILE}:{i}"
+        if not m:
+            fails.append(f"{where}: unreadable line {line!r} — the form is "
+                         f"`<file.md> <lines> [<YYYY-MM-DD> <reason>]`; a raise "
+                         f"carries both a date and a reason")
+            continue
+        date = m.group("date")
+        if date:
+            try:
+                datetime.date.fromisoformat(date)
+            except ValueError:
+                fails.append(f"{where}: {date!r} is not a calendar date")
+        name = m.group("file")
+        if name in out:
+            fails.append(f"{where}: {name} has a second ceiling line")
+            continue
+        out[name] = (int(m.group("ceiling")), date, m.group("reason"))
+    return out
+
+
+def check_reference_shape(skill_dir, core, fails):
+    """Print the `reference shape` line; gate it when the skill opted in."""
+    refs = pathlib.Path(skill_dir) / "references"
+    if not refs.is_dir():
+        return
+    named, unnamed = core_pointers(core)
+    ceilings = read_ref_ceilings(refs, fails)
+    N, tol = SPLIT_TRIGGER_THRESHOLD, CEILING_SLACK_TOLERANCE
+    rows = []
+    for p in sorted(refs.glob("*.md")):
+        text = p.read_text(encoding="utf-8")
+        lines = len(text.splitlines())
+        declared = declared_load_triggers(text)
+        scanned = len(named.get(p.name, ())) + unnamed.get(p.name, 0)
+        rows.append((p.name, lines, declared, scanned))
+    shown = []
+    for name, lines, declared, scanned in rows:
+        c = ceilings.get(name) if ceilings is not None else None
+        t = str(len(declared)) if declared is not None else f"~{scanned}"
+        shown.append(f"{name}={lines}/{c[0] if c else '-'}/{t}")
+    gated = ("ceilings in references/" + REF_CEILINGS_FILE if ceilings is not None
+             else "no references/" + REF_CEILINGS_FILE + " — not gated")
+    print(f"reference shape (lines / ceiling / load triggers declared in the header, "
+          f"~ = scanned from the core, none declared; split by episode above {N}; {gated}): "
+          + ", ".join(shown))
+    for name, lines, declared, scanned in rows:
+        sections = len(named.get(name, ()))
+        if declared is not None and sections > len(declared):
+            print(f"note: the core names {sections} distinct sections of {name} but its "
+                  f"header declares {len(declared)} load triggers — bring its "
+                  f"`Load triggers:` line up to date")
+        if declared is not None and len(declared) > N:
+            print(f"note: {name} declares {len(declared)} load triggers (> {N}) — split "
+                  f"by episode is indicated"
+                  + (" once it outgrows its ceiling" if ceilings is not None
+                     else "; size is not the signal"))
+    if ceilings is None:
+        return
+    present = {name for name, *_ in rows}
+    for name in sorted(set(ceilings) - present):
+        fails.append(f"references/{REF_CEILINGS_FILE} names {name}, which is not in "
+                     f"references/ — remove its line, or lower it with the file it moved to")
+    for name, lines, declared, _ in rows:
+        if name not in ceilings:
+            fails.append(f"references/{name} has no ceiling: this skill opted in with "
+                         f"references/{REF_CEILINGS_FILE}, so add `{name} {lines}` there")
+            continue
+        ceiling, date, reason = ceilings[name]
+        if declared is None:
+            fails.append(f"references/{name} declares no load triggers: add one "
+                         f"`Load triggers: a; b; c` line to its header (before the first "
+                         f"`## ` heading), one entry per distinct episode that loads it")
+            continue
+        n = len(declared)
+        if lines > ceiling and n > N:
+            fails.append(
+                f"references/{name} {lines} lines > ceiling {ceiling}, with {n} load "
+                f"triggers (> {N}): split it by episode, so each trigger loads only "
+                f"its own part — a raise is not the remedy for a file this many "
+                f"episodes pull in")
+        elif lines > ceiling:
+            fails.append(
+                f"references/{name} {lines} lines > ceiling {ceiling}, with {n} load "
+                f"trigger(s) (<= {N}): trim it back to {ceiling} lines or fewer, or raise the "
+                f"ceiling in references/{REF_CEILINGS_FILE} to {lines} with a dated "
+                f"one-line reason beside the number (`{name} {lines} YYYY-MM-DD why`)")
+        elif ceiling - lines > tol:
+            fails.append(
+                f"references/{name} {lines} lines, ceiling {ceiling}: slack "
+                f"{ceiling - lines} > tolerance {tol}. Lower its line in "
+                f"references/{REF_CEILINGS_FILE} to {lines} in this commit — a trim "
+                f"is locked in, not left as headroom")
+        if reason and n > N:
+            fails.append(
+                f"references/{name} carries a raised ceiling ({date}: {reason}) but "
+                f"declares {n} load triggers (> {N}): with that many episodes the "
+                f"remedy is a split by episode, not a raise")
 
 
 def check_plugin_manifest(skill_dir, fails):
@@ -867,16 +1040,20 @@ RESIDUE_FIXTURES = [
 
 
 def roundtrip_case(after_pack):
-    """Pack a two-file fixture skill, apply `after_pack` to the directory,
-    and report whether verify_roundtrip() failed. Runs in a temporary
-    directory outside any staged tree."""
+    """Pack a three-file fixture skill (one a dotfile sidecar the bundle must
+    carry), apply `after_pack` to the directory, and report whether
+    verify_roundtrip() failed — None if the sidecar was not packed. Runs in a
+    temporary directory outside any staged tree."""
     with tempfile.TemporaryDirectory() as tmp:
         src = pathlib.Path(tmp) / "fixture-skill"
         (src / "references").mkdir(parents=True)
         (src / "SKILL.md").write_text('---\nname: "fixture-skill"\n---\nbody\n', encoding="utf-8")
         (src / "references" / "a.md").write_text("one\n", encoding="utf-8")
+        (src / "references" / REF_CEILINGS_FILE).write_text("a.md 1\n", encoding="utf-8")
         out = pathlib.Path(tmp) / "fixture-skill.skill"
         written = pack(src, out)
+        if f"fixture-skill/references/{REF_CEILINGS_FILE}" not in written:
+            return None           # a dotfile sidecar left out of the bundle
         after_pack(src)
         fails = []
         verify_roundtrip(out, src, written, fails)
@@ -1064,8 +1241,84 @@ def migrate_case(skill_line, ov):
         return r.returncode, files[0].read_text(encoding="utf-8") if files else None
 
 
+def ref_shape_case(lines, triggers, sidecar):
+    """Run check_reference_shape over a one-reference fixture skill: a.md of
+    `lines` lines declaring `triggers` load triggers (None = no declaration),
+    beside `sidecar` as references/.ceilings (None = not opted in). Returns
+    the failures."""
+    with tempfile.TemporaryDirectory() as tmp:
+        refs = pathlib.Path(tmp) / "fixture-skill" / "references"
+        refs.mkdir(parents=True)
+        head = ["# A", ""]
+        if triggers is not None:
+            head += ["Load triggers: " + "; ".join(f"episode {i}" for i in range(triggers)), ""]
+        body = head + ["## Contents", "", "- S", "", "## S"]
+        body += ["text"] * (lines - len(body))
+        (refs / "a.md").write_text("\n".join(body) + "\n", encoding="utf-8")
+        if sidecar is not None:
+            (refs / REF_CEILINGS_FILE).write_text(sidecar, encoding="utf-8")
+        fails = []
+        import contextlib
+        import io
+        with contextlib.redirect_stdout(io.StringIO()):   # the shape line is not the verdict
+            check_reference_shape(refs.parent, "Load `references/a.md` (\"S\") when S.\n", fails)
+        return fails
+
+
+# (name, lines, declared triggers, sidecar, substring every failure set must
+# hold — None = must pass, substring a failure must NOT hold): the growth
+# barrier's boundaries, with N = SPLIT_TRIGGER_THRESHOLD and the tolerance.
+REF_SHAPE_FIXTURES = [
+    ("no sidecar: never gated, even far over any size and trigger count",
+     5000, 40, None, None, None),
+    ("no sidecar and no declaration: still not gated", 5000, None, None, None, None),
+    ("under ceiling, inside tolerance", 98, 3, "a.md 100\n", None, None),
+    ("at the tolerance boundary (slack 3) passes", 97, 3, "a.md 100\n", None, None),
+    ("over ceiling, <= N triggers: trim or reasoned raise, never split",
+     105, SPLIT_TRIGGER_THRESHOLD, "a.md 100\n", "trim it back", "split"),
+    ("reasoned raise clears it (dated reason beside the number)",
+     105, 3, "a.md 105 2026-01-31 one new episode section, single-trigger\n", None, None),
+    ("over ceiling, > N triggers: split indicated",
+     105, SPLIT_TRIGGER_THRESHOLD + 1, "a.md 100\n", "split it by episode", "trim"),
+    ("a raise on a file with > N triggers fails: the remedy is a split",
+     105, SPLIT_TRIGGER_THRESHOLD + 1, "a.md 105 2026-01-31 more room\n", "not a raise", None),
+    ("shrink beyond tolerance: the ceiling must be lowered",
+     96, 3, "a.md 100\n", "Lower its line", None),
+    ("a raise with a reason but no date is unreadable", 100, 3, "a.md 100 more room\n",
+     "unreadable line", None),
+    ("opted in, file without a declaration fails", 100, None, "a.md 100\n",
+     "declares no load triggers", None),
+    ("opted in, file without a ceiling line fails", 100, 3, "# none yet\n",
+     "has no ceiling", None),
+]
+
+# (name, core text, {file: section count}, {file: filename-only count})
+POINTER_FIXTURES = [
+    ("named form, wrapped heading", 'Load `references/a.md` ("One\n   two") now.\n', {"a.md": 1}, {}),
+    ("parenthesised form", 'done (`references/a.md`,\n "One") here.\n', {"a.md": 1}, {}),
+    ("filename-only pointers count once per paragraph",
+     "See `references/a.md` and `references/a.md`.\n\nAlso `references/a.md`.\n", {}, {"a.md": 2}),
+    ("a backtick between path and heading breaks the pairing",
+     'See `references/a.md` and `x` ("Not a target").\n', {}, {"a.md": 1}),
+]
+
+
 def selftest():
     bad = total = 0
+    for name, lines, trig, sidecar, want, avoid in REF_SHAPE_FIXTURES:
+        fails = ref_shape_case(lines, trig, sidecar)
+        ok = (not fails) if want is None else any(want in f for f in fails)
+        if avoid is not None:
+            ok = ok and not any(avoid in f for f in fails)
+        bad += not ok; total += 1
+        print(f"{'ok  ' if ok else 'FAIL'} reference ceiling: {name}"
+              + ("" if ok else f" (failures {fails})"))
+    for name, core, want_named, want_unnamed in POINTER_FIXTURES:
+        named, unnamed = core_pointers(core)
+        ok = {f: len(s) for f, s in named.items()} == want_named and unnamed == want_unnamed
+        bad += not ok; total += 1
+        print(f"{'ok  ' if ok else 'FAIL'} core pointer: {name}"
+              + ("" if ok else f" (named {named}, filename-only {unnamed})"))
     for name, text, must_fail in RESIDUE_FIXTURES:
         failed = bool(residue_hits(pathlib.Path("fixture.md"), text))
         ok = failed == must_fail

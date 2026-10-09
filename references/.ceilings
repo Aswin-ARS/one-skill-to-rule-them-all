@@ -1,0 +1,12 @@
+# Line ceilings for the reference files, read by scripts/validate-skill-bundle.py.
+# One line per file: <file.md> <ceiling> [<YYYY-MM-DD> <reason for the last raise>]
+# Over its ceiling, a file with more than 12 load triggers is split by episode;
+# one with 12 or fewer is trimmed, or its ceiling raised with a dated reason.
+# A ceiling more than 3 lines above its file's count is lowered to the count.
+environments.md 1727
+migration.md 228
+observation-log.md 1740
+signals.md 234
+skill-authoring.md 1452
+starter-principles.md 482
+weekly-review.md 2135
