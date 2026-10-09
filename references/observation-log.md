@@ -555,15 +555,11 @@ it costs most: the one-line environment probes run ad hoc mid-investigation,
 whose empty result goes straight into a runbook or an observation body as a
 fact.
 
-Two observed shapes, both recorded as findings that were not there:
-
-- `ls /usr/bin/*askpass* /usr/lib/ssh/*askpass* …` in an interactive zsh
-  printed `no matches found` — a glob error, not an answer — and "no
-  askpass helper present" was written down.
-- A presence listing over a directory the session lacked permission to read
-  returned nothing, and the absence was reported as the state of the system.
-
-Neither command was a "log instrument", so neither attracted the guard.
+The shape, a finding that was not there:
+`ls /usr/bin/*askpass* /usr/lib/ssh/*askpass* …` in an interactive zsh
+prints `no matches found` — a glob error, not an answer — and "no askpass
+helper present" gets written down. The command is not a "log instrument",
+so it does not attract the guard.
 Apply it to **any command whose empty or zero output is about to become a
 claim**: pair it with a second probe by different means, or state the
 result as "the probe returned nothing" rather than "there is nothing".

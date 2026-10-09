@@ -1333,11 +1333,9 @@ not it exists live.** `find "[workspace folder]/skill-updates" -maxdepth 2
 every hit against live — not only today's anchor. The presence check
 below is defined against a staged copy of the *live* file, so it is
 structurally blind to a draft that never went live, and that is the work
-most at risk of being lost. Two ways it bites: a skill authored "from
-scratch" while an uninstalled draft of the same name already carried
-rules the new file lacked; and a skill seeded from live while an older
-staged draft held a whole section live never received — installing the
-fresh copy would have dropped it. A hit in state (c) of the
+most at risk of being lost: a skill authored "from scratch" while an
+uninstalled draft of the same name already carries rules the new file
+lacks. A hit in state (c) of the
 reconciliation gate is the base for this staging, as the gate says; a
 hit in state (d) is merged onto live first, and the merge is the base.
 
