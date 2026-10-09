@@ -705,8 +705,32 @@ runs once activation has already succeeded — so the external diagnostic
 is the one that catches a skipped install step: **if
 `skill-observations/observation-log/` does not exist after a few sessions
 of tool-using work, activation never happened**; check the activation
-block in the config, or install the hook. The README carries the same
-diagnostic for users who never read this file.
+block in the config, or install the hook. The directory existing proves
+only that one session ran: a first session loaded by hand, or by a lucky
+description match, writes entries and the trace, and the install then
+goes quiet (observed: four entries on day one, then three weeks of work
+with nothing logged and no review, found by an audit that read the
+dates). So the diagnostic has a second half: **the last
+`session-start scan` line in `skill-observations/checkpoints.log` is the
+last session that ran the protocol** — days old while work went on means
+activation is not running, whatever the log holds. The scan prints a
+`GAP:` line when that date is 7 or more days old, which helps only the
+session that is activated after the gap; the dated line is the check
+anyone can run from outside. The README carries the same diagnostic for
+users who never read this file.
+
+**Another skill's session-start output is a false positive for
+activation.** A harness that injects a different always-on skill's
+content at session start makes the session look skill-governed while
+this skill's activation does not exist (observed: a full working day of
+real work with the skill installed beside four others, no log and no
+activation block). Count only evidence of THIS skill: its own
+invocation, the protocol's trace in `checkpoints.log`, or the
+`observation-log/` it created. An install is not finished until an
+artefact outside the skill proves it: create the workspace AND write the
+activation, then print what was written and where. Where the activation
+cannot be written, the install does not succeed silently: report it as
+incomplete and hand over the block to paste.
 
 ### Activation config — late, intermittent, and why the guard cannot live inside it
 

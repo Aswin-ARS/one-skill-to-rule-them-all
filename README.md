@@ -84,7 +84,7 @@ The skill is a small bundle: `SKILL.md`, the files in `references/` that are loa
 
 **Vercel's skills CLI:** the skills.sh listing carries independent security audits from Gen Agent Trust Hub, Socket and Snyk.
 
-**Check that it actually runs.** Installing the files is not the same as activating the skill: description matching alone under-triggers, so add the activation instruction from `references/environments.md` to your CLAUDE.md (or your platform's equivalent) or install the session-start hook. Then verify in a *new* session — the session you install in cannot prove it — that the skill is invoked before the first tool call. The external tell if you skipped this: if `skill-observations/observation-log/` doesn't exist after a few sessions of real work, activation never happened.
+**Check that it actually runs.** Installing the files is not the same as activating the skill: description matching alone under-triggers, so add the activation instruction from `references/environments.md` to your CLAUDE.md (or your platform's equivalent) or install the session-start hook. Then verify in a *new* session — the session you install in cannot prove it — that the skill is invoked before the first tool call. The external tell if you skipped this: if `skill-observations/observation-log/` doesn't exist after a few sessions of real work, activation never happened. If it exists, read the last `session-start scan` line in `skill-observations/checkpoints.log`: that is the last session that ran the skill, so a date days old while you kept working means activation stopped, however many entries the first session wrote. Another skill's start-up text appearing in your sessions is not evidence that this one is active.
 
 ## Claude environment notes
 

@@ -193,12 +193,12 @@ skill" (some upload paths keep only `SKILL.md`); its episodes do not run.
    session whose output a caller owns does neither: `references/environments.md`
    ("Sessions whose output channel is owned by a caller").
 4. **Activation.** Once per session: if no CLAUDE.md (or equivalent)
-   activation instruction for this skill exists, briefly suggest adding one
-   (see `references/environments.md`). Skip if already configured. Be clear
-   about what this step is: it runs only after the skill has been invoked,
-   so it verifies a working setup and structurally cannot detect the
-   missing one — it is not the safety net for a never-activated install;
-   the checks from outside the runtime are in `references/environments.md`.
+   activation instruction for this skill exists, suggest adding one (see
+   `references/environments.md`); after a scan `GAP:` line, open with the
+   gap and the missing instruction, plainly. Skip if configured. This step
+   runs only once the skill is invoked, so it verifies a working setup and
+   cannot detect a missing one — it is not the safety net for a
+   never-activated install; the outside checks are in that reference.
 5. **Concurrency.** There is no shared log file to guard: each observation
    is its own file, so creating one never collides with another session's
    entry; re-read one before changing its *status* (How to Log).

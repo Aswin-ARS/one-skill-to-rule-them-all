@@ -12,7 +12,8 @@
 #                     path may contain spaces.
 #
 # Prints, on stdout, in this order: any NOTE / LOST ENTRIES lines; the counts
-# line (files, parsed, suspect, archive-suspect); the logs found under the
+# line (files, parsed, suspect, archive-suspect); a GAP line when the previous
+# scan in checkpoints.log is 7 or more days old; the logs found under the
 # root's parent; the active principles' headings; and LAST the frontmatter
 # of every numbered entry, each header followed by one `---` line. Appends
 # one line to skill-observations/checkpoints.log:
@@ -130,6 +131,22 @@ lost=$( { find "$d" -maxdepth 1 -name '[0-9]*.md' -empty; LC_ALL=C find "$d" -ma
 [ "$parsed" -lt "$n" ] && echo "NOTE: $((n - parsed)) of $n headers did not parse (no opening or no closing ---):" && LC_ALL=C find "$d" -maxdepth 1 -name '[0-9]*.md' -exec awk 'FNR==1 {if (NR>1 && fm) print f; f=FILENAME; sub(/^\357\273\277/, ""); fm=/^---[[:space:]]*$/; if (!fm) {print f; nextfile}; next} fm && /^---[[:space:]]*$/ {fm=0; nextfile} END {if (fm) print f}' {} +
 [ "$suspect" -gt 0 ] || [ "$a_sus" -gt 0 ] && echo "NOTE: $suspect of $n headers (and $a_sus in archive/) look like invalid YAML (an unquoted ': ', text after a closing quote, a value opening with a backtick, @ or %, an undefined escape, a colon in an unquoted list entry) — quote or fix them (File format)"
 printf 'files: %s  parsed: %s  suspect (awk, a floor): %s  archive-suspect: %s\n' "$n" "$parsed" "$suspect" "$a_sus"
+
+# --- gap: days since the previous session-start scan --------------------------
+# Read before this run's trace line is appended. The previous scan's date is
+# the last day a session ran the protocol; a gap of 7 days or more (the
+# review interval) while the user kept working is the one sign a skill that
+# stopped being activated can leave: the sessions in between never reached
+# the step that would say so. Day numbers come from awk, so no `date -d`
+# (GNU) or `date -j` (BSD) is needed. No earlier scan line: no note.
+ck="$root/skill-observations/checkpoints.log"
+gap=$( [ -f "$ck" ] && LC_ALL=C awk -v today="$(date +%F)" '
+  function dn(s,  y, m, d) { y = substr(s, 1, 4) + 0; m = substr(s, 6, 2) + 0; d = substr(s, 9, 2) + 0
+    if (m < 3) { y--; m += 12 }
+    return 365 * y + int(y / 4) - int(y / 100) + int(y / 400) + int((153 * (m - 3) + 2) / 5) + d }
+  / session-start scan:/ && /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { last = substr($ 0, 1, 10) }
+  END { if (last != "") { g = dn(today) - dn(last); if (g >= 7) print last " " g } }' "$ck")
+[ -n "$gap" ] && echo "GAP: the previous session-start scan ran ${gap% *}, ${gap#* } days ago. If work happened in between, the skill was not activated in those sessions: check the activation instruction (references/environments.md, \"Verify activation in a NEW session\")"
 
 # --- the trace: one line per session, with date, time and source -------------
 printf '%s [%s] session-start scan: files=%s parsed=%s principles=%s\n' "$(date '+%F %H:%M')" "${PWD##*/}" "$n" "$parsed" "$pr" \

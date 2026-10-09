@@ -876,15 +876,20 @@ ROUNDTRIP_FIXTURES = [
 # The session-start scan ships as scripts/session-start-scan.sh beside this
 # file. Each case runs it against a throwaway workspace (with a space in its
 # path) and pins one boundary: (name, scenario, args, exit status, stdout
-# substring, checkpoint lines written). Skipped, not failed, where no bash is
-# on PATH: the scan is a bash script and the gate is not.
+# substring, checkpoint lines written, stdout substring that must be ABSENT).
+# Skipped, not failed, where no bash is on PATH: the scan is a bash script
+# and the gate is not. The "gap" and "recent" scenarios seed checkpoints.log
+# with one earlier scan line, 21 and 2 days old.
 SCAN_SCRIPT = pathlib.Path(__file__).resolve().parent / "session-start-scan.sh"
 SCAN_FIXTURES = [
     ("healthy log scans: counts line, one checkpoint line", "healthy", True, 0,
-     "files: 2  parsed: 2  suspect (awk, a floor): 1", 1),
+     "files: 2  parsed: 2  suspect (awk, a floor): 1", 1, "GAP:"),
     ("no header parses: guard halts before the checkpoint", "broken", True, 1,
-     "SCAN COMMAND BROKEN", 0),
-    ("no workspace root: refused, nothing written", "healthy", False, 2, "", 0),
+     "SCAN COMMAND BROKEN", 0, ""),
+    ("no workspace root: refused, nothing written", "healthy", False, 2, "", 0, ""),
+    ("previous scan 21 days old: GAP line names its date", "gap", True, 0,
+     "GAP: the previous session-start scan ran ", 2, ""),
+    ("previous scan 2 days old: no GAP line", "recent", True, 0, "files: 2", 2, "GAP:"),
 ]
 
 
@@ -899,7 +904,12 @@ def scan_case(scenario, pass_root):
         (log / "archive").mkdir(parents=True)
         ck = root / "skill-observations" / "checkpoints.log"
         ck.write_text("", encoding="utf-8")
-        if scenario == "healthy":
+        if scenario in ("gap", "recent"):
+            import datetime
+            day = datetime.date.today() - datetime.timedelta(days=21 if scenario == "gap" else 2)
+            ck.write_text(f"{day} 09:00 [w] session-start scan: files=2 parsed=2 principles=absent\n",
+                          encoding="utf-8")
+        if scenario != "broken":
             (log / "0001-a.md").write_text('---\nid: 1\ntitle: "ok"\n---\nbody\n', encoding="utf-8")
             (log / "0002-b.md").write_text("---\nid: 2\ntitle: Fix: unquoted\n---\n", encoding="utf-8")
         else:
@@ -1014,9 +1024,9 @@ def selftest():
         ok = subprocess.run(["bash", "-n", str(SCAN_SCRIPT)]).returncode == 0
         bad += not ok; total += 1
         print(f"{'ok  ' if ok else 'FAIL'} scan script: bash -n passes")
-        for name, scenario, pass_root, want_rc, want_out, want_ck in SCAN_FIXTURES:
+        for name, scenario, pass_root, want_rc, want_out, want_ck, absent in SCAN_FIXTURES:
             rc, out, ck = scan_case(scenario, pass_root)
-            ok = rc == want_rc and want_out in out and ck == want_ck
+            ok = rc == want_rc and want_out in out and ck == want_ck and not (absent and absent in out)
             bad += not ok; total += 1
             print(f"{'ok  ' if ok else 'FAIL'} scan script: {name}"
                   + ("" if ok else f" (exit {rc}, {ck} checkpoint lines)"))
