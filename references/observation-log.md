@@ -68,11 +68,8 @@ skill-observations/
   checkpoints.log        # append-only acknowledgement markers (optional)
 ```
 
-Each file in `observation-log/` follows the frontmatter format in the core
-skill (How to Log). There is no central index to keep in sync: the
-directory listing is the index, and the frontmatter is the metadata.
-"The observation log", wherever this skill or any other skill says it,
-means this directory.
+Each file follows the core frontmatter format (How to Log); the listing
+is the index.
 
 ### Workspace creation
 
@@ -139,13 +136,6 @@ fail differently and only one of them complains:
 | `archive/` | at the first write, when the id snippet reads `.id-floor` or `mv`s into it |
 | `cross-cutting-principles.md` | at the first review |
 | `last-review-date.txt` | only if step 3 applies its own recreate rule — otherwise the review trigger never fires, and nothing says so |
-
-This is the same shape the skill already solved for archival, and solved
-the same way — a duty written as prose next to another action inherits none
-of that action's enforcement, so the archival sweep was folded *into* the
-id-derivation snippet ("If a step must always accompany a tool call, put it
-inside the same command", Archival on Write). Step 1's creation is the
-remaining place where that reasoning had not been applied.
 
 ### Snippets take a spaced path and run under bash
 
@@ -919,16 +909,8 @@ runs skills from (its project-level skills directory, in place of
 sweep before a `proposes_skill:` write, and name its root and count in
 `siblings_checked:`.
 
-**3. Record the verdict** in `siblings_checked:`. The field exists because
-the two states of a one-entry `skill:` list — siblings evaluated and
-correctly excluded, versus siblings never considered — are byte-identical,
-so nothing downstream can distinguish them: a review cannot flag
-under-scoped entries and a drift audit cannot tell a decision from an
-oversight. Recording the judgement does not make the judgement better; it
-makes its *absence* visible, which is the only property that lets anything
-enforce it. The instruction alone is demonstrably not enough — four
-observations in one session were logged under-scoped by an author who had
-written the propagation rule earlier in that same session. Because the
+**3. Record the verdict** in `siblings_checked:` — the field makes an
+absent judgement visible (core, How to Log). Because the
 field is frontmatter, the cheap scan above can report "N observations
 logged without a sibling check" without reading a single body. Where a
 skill already relies on "the write is the enforcement", a new rule that
@@ -957,42 +939,8 @@ Steps 3 and 4.
 
 ## Assigning an id
 
-The id is the highest of three values, plus one: the highest numeric
-filename prefix in `observation-log/`, the highest in
-`observation-log/archive/`, and the number in
-`observation-log/archive/.id-floor`. The floor file holds the highest id
-ever issued, so the counter cannot restart from 1 when the active directory
-is empty (every file archived) and nothing else remembers the range. Update
-it whenever you issue an id above it. The archival sweep (see Archival
-below) is folded into this same command: every id derivation first moves
-stale resolved files to `archive/`, so archival happens as a side effect
-of a step no write can skip.
-
-The core skill's "How to Log" section holds the authoritative copy of this
-snippet; the copy below is reproduced for reading in context, and if the
-two ever disagree, the core wins:
-
-```bash
-d="[ABSOLUTE PATH]/skill-observations/observation-log"   # the pinned workspace path, never relative to the cwd; it may contain a space, so keep it quoted; bash, not sh
-today=$(date +%F)          # archival rides inside this command (see below):
-n_files=$(find "$d" -maxdepth 1 -name '[0-9]*.md' ! -empty | wc -l | tr -d ' ')   # a zero-byte file gives awk no line to count
-seen=$(cd "$d" && awk 'FNR==1 {n++; nextfile} END {print n+0}' [0-9]*.md 2>/dev/null)   # files the sweep's glob reaches, counted apart from the sweep
-[ "$n_files" -gt 0 ] && [ "${seen:-0}" -eq 0 ] && { echo "ARCHIVAL SWEEP BROKEN — $n_files files present, 0 examined"; exit 1; }
-( cd "$d" && LC_ALL=C awk -v today="$today" 'FNR==1 {st=""; r=""; sub(/^\357\273\277/, ""); fm=/^---[[:space:]]*$/; if (!fm) nextfile; next}
-    fm && /^---[[:space:]]*$/ {if (st ~ /^(actioned|declined|superseded)$/ && r ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ && r < today) print FILENAME; nextfile}
-    fm && /^status:/ {st=$2}
-    fm && /^resolved:/ {r=$2}' [0-9]*.md 2>/dev/null | while IFS= read -r x; do mv -n "$x" archive/ 2>/dev/null; if [ -e "$x" ]; then echo "NOTE: $x not archived — archive/$x exists or the move failed"; fi; done )   # one awk for the set, one mv per stale resolved file, never over an archived one; bash
-floor=$(sed '1!d; s/[^0-9]//g' "$d/archive/.id-floor" 2>/dev/null); floor=$((10#${floor:-0}))   # digits only: a CRLF or padded floor still reads
-ids=$(for p in "$d"/[0-9]*.md "$d"/archive/[0-9]*.md; do [ -e "$p" ] && printf '%s\n' "${p##*/}"; done | grep -oE '^[0-9]+')   # globs and builtins: no `ls` a profile alias can rebind
-[ "$(printf '%s' "$ids" | grep -c .)" -eq "$(find "$d" "$d/archive" -maxdepth 1 -name '[0-9]*.md' | wc -l)" ] || { echo "ID COMMAND BROKEN — the listing and find disagree on the prefixed files"; exit 1; }
-hi=$(printf '%s\n' "$ids" | sort -n | tail -1); hi=$((10#${hi:-0}))   # from the files alone; 10#: a zero-padded prefix is not octal
-[ "$hi" -lt "$floor" ] && echo "NOTE: highest file id $hi is below .id-floor $floor — ids issued without a file; the new id goes above the floor"
-next_id=$(( (hi > floor ? hi : floor) + 1 ))      # never below the floor, whatever the listing saw
-f="$d/$(printf '%04d' "$next_id")-<slug>.md"      # the target path, built from the id just derived
-[ -n "$(find "$d" -maxdepth 2 -name "$(printf '%04d' "$next_id")-*.md")" ] && { echo "COLLISION — id $next_id already used; re-derive"; exit 1; }   # guard the id PREFIX across active + archive, not the path
-(set -C; : > "$f") || exit 1                        # noclobber: create, never truncate an existing file
-printf '%s\n' "$next_id" > "$d/archive/.id-floor"   # AFTER the create: an id check that writes no file never moves the floor
-```
+Rules: core, How to Log. The snippet lives in the core; the notes below
+explain its lines.
 
 The snippet leaves the derived number in `$next_id` and the target path in
 `$f`; append `printf '%04d\n' "$next_id"` if you also want the filename
@@ -1147,18 +1095,8 @@ to that prefix, and edit its `id:` frontmatter field to match. Both are
 ordinary single-file operations; no other entry is touched.
 
 **The id printed by the session-start scan is never an input to a write.**
-The scan prints ids for awareness — which observations exist, what they
-target — and awareness is the wrong source for a number that has to be a
-maximum at the moment of writing. The signature of the failure is
-unmistakable after the fact: a new file numbered "highest id visible at
-session start, plus one", written an hour later, while the directory and
-the floor both already stood ten higher. That has now happened twice with
-this rule loaded and correct in the writing session, which is the
-second-violation condition: the remedy is not a firmer sentence but a write
-path that cannot be split — `scripts/new-observation.sh` (above), where a
-script can run, so that "resolve at write time" is what the only available
-write path does rather than a rule about when to run a snippet. The prefix
-guard is the backstop for the harness where it cannot.
+Awareness is the wrong source for a maximum; the script (core) is the
+barrier, the prefix guard the backstop where it cannot run.
 
 ### Resolve each id at its own write time
 
@@ -1290,11 +1228,7 @@ artefact against it — excerpt to find an entry, full text to judge one
 (`weekly-review.md`, "Staged-work reconciliation gate").
 
 **A change you did not make resolves an observation point by point,
-never title against title.** When an upstream release, a sibling
-session's edit or a fix that arrived by merge appears to cover an
-observation, list the points its body makes and name, for each, the
-line of the diff that covers it; a point with no line stays open and
-moves to a carrier observation (the carrier pattern, below). A point
+never title against title** (core, Acting on Observations). A point
 that joins several conditions (A and B) counts as one point per
 condition — a line that matches the second half does not cover the
 first. Holding the fix's title against the observation's title measures
@@ -1304,12 +1238,8 @@ resolved.
 
 ## Editing an existing observation
 
-Status changes and archival touch exactly one file. Re-read that file
-immediately before editing it (a parallel review may have resolved it),
-then edit only the frontmatter fields you are changing (`status`,
-`resolved`, `resolution`). Never rewrite a file you don't own, and never
-batch-rewrite the whole directory — it is not needed, and it reintroduces
-the multi-entry hazard the layout exists to remove.
+Core rule (How to Log); re-read first — a parallel review may have
+resolved it — and never rewrite a file you don't own.
 
 When a backlog is split between parallel sessions, the mechanical safety
 above cannot stop two sessions legitimately resolving the *same* file in
@@ -1506,25 +1436,9 @@ condition.
 
 ## Archival
 
-Archival is bound structurally to the id derivation (Assigning an id,
-above): the same command that computes the next id first moves
-already-resolved files from `observation-log/` to
-`observation-log/archive/`, so every write triggers the sweep as a side
-effect of a step it cannot skip. The prose form of the rule — "on every
-write, first archive" — under-fires in practice: a duty attached as a
-preamble to another action inherits none of that action's enforcement,
-so if a step must always accompany a tool call, it belongs inside the
-same command, not beside it in prose. The scheduled review archives
-independently at its Step 1, as a backstop for logging-quiet weeks.
-"Already resolved" is decided by the file's
-own frontmatter: `status: actioned`, `declined` or `superseded` AND a
-`resolved:` date before today. Files resolved today stay until the next
-day, no matter which session resolved them — the grace period lives in the
-file, never in session memory, so it holds across parallel and subsequent
-sessions. A resolved file with no readable `resolved:` date gets today's
-date written to that field instead of being archived; the embedded sweep
-deliberately skips such files (its date check fails closed), so that
-one-field repair is a separate, careful edit of that file alone.
+Rules: core, Archival on Write. The sweep's date check fails closed, so a
+resolved file with no readable `resolved:` date is skipped; the one-field
+repair is a separate edit.
 
 **`parked` never archives**: it is not resolved and carries no `resolved:`
 date — never stamp one on it to tidy it away (The `parked` status, above).
@@ -1589,15 +1503,7 @@ converted (see `migration.md`) and are not scanned.
 
 ## Referencing observations
 
-Cite an observation by the `id` field in its frontmatter, which matches the
-`NNNN-` prefix of its filename. Never cite a `grep -n` line number as if it
-were the id — search-tool line numbers are positional metadata, not
-identifiers. Cheap plausibility check: a cited id should fall within the
-range of ids that actually exist across `observation-log/`, its `archive/`
-and `.id-floor`; a number far outside that range (citing #1365 when the
-highest id is #766) is almost certainly a line number misread as an id.
-IDs come from the record's own identifier field, never from the positional
-metadata of the tool that found it.
+Rules: core, Referencing Observations.
 
 **Cite the id where the fix lands.** A commit message or code comment that
 applies an observation names its id (`observation #<id>`, qualified by
@@ -1619,8 +1525,7 @@ failure where the skill is loaded but nothing is written until the user
 asks. Hooking the flush onto tool calls you are already making (presenting
 a file, rendering a deck, completing a todo batch) means the write happens
 as a side effect of work you were doing anyway, rather than depending on a
-separate act of memory. The count need not be precise; roughly every third
-completion is the rule.
+separate act of memory.
 
 **A claimed write is not a write.** Every rule above binds on the write;
 the summary that reports it needs its own rule, because a closing line
@@ -1654,10 +1559,8 @@ write instead.)
 **Two gaps this pairing still leaves — both observed across full working days
 in which nothing was logged at all.**
 
-1. *A session can contain no todo items whatsoever.* The 3rd-completion
-   checkpoint is bound to ONE tool; work driven entirely through direct tool
-   calls and shell commands never trips it. It is armed only in sessions that
-   happen to use todos, so it is not a safety net that is always present. When
+1. *A session can contain no todo items.* The 3rd-completion checkpoint is
+   bound to one tool (core). When
    a session runs without them, the deliverable flush is the only enforcement
    left and must be applied deliberately — and in a chat-only session, whose
    output never looks like a handover, it does not fire at all (observed: four

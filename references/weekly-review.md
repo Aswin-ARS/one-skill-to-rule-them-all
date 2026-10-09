@@ -13,15 +13,9 @@ input to staged copies — never to live skills. Two modes:
   true: no scheduled review is registered (or none has written
   `last-review-date.txt` in 7+ days — a scheduler's "succeeded" says the
   job launched, never that the review ran), AND
-  `skill-observations/last-review-date.txt` contains `never` or a date
-  7 or more days old — the same boundary SKILL.md step 3 uses, stated the
-  same way on purpose: at exactly seven days the two files must agree, or
-  whether a review runs depends on which one the session consulted
-  (a missing file is recreated with `never` — see
-  Session Start steps 1 and 3; the file's value is authoritative, a date
-  means a review actually ran). In an interactive session a pending
-  fallback surfaces as a one-line offer and runs only if the user opts in
-  (SKILL.md, Session Start step 3) — it never gates the user's task.
+  `skill-observations/last-review-date.txt` reads `never` or a date 7+
+  days old (the SKILL.md step 3 boundary, which must match); interactively
+  it is only offered (step 3), never gating the user's task.
   Its content scales with the backlog and its frequency never does,
   because a backlog that is never drained fails quietly, by becoming too
   expensive to drain: the per-session behaviour that is correct (never

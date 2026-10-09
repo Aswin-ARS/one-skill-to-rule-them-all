@@ -270,11 +270,8 @@ that directory and the identity root are both "stable"; anchor inside the
 managed directory when one exists, otherwise on the identity root — never
 both.
 
-**Scope matches installation scope.** Skills installed at user or global
-scope are observed from every project, so their log is one user-scope
-path shared by every project, tool and agent; a per-project anchor is
-right only for skills that exist in one project. A stable anchor can
-still be plural — in Claude Code the identity is derived from the
+**Scope matches installation scope** (SKILL.md, `[workspace folder]`). A
+stable anchor can still be plural — in Claude Code the identity is derived from the
 directory the session starts in, so per-subfolder habits shard the log
 into several stable anchors that each look like the only one. Decide the
 scope once, at install, and pin it. **One plural case is legitimate and
@@ -1323,8 +1320,7 @@ than `last-review-date.txt` with the marker untouched is a run that fired
 and never reached its second action — two different defects, and neither
 is a review that happened. The marker is judged by its content, never by
 its mtime: Step 7 writes it after the date file, so a completed run's
-marker is always the newer of the two. Session Start step 3 reports either as "fired YYYY-MM-DD,
-no review recorded" and treats the review as due.
+marker is always the newer of the two.
 
 **The access grant is part of the task definition, not of the path.** A
 scheduled session runs in the sandbox the scheduler creates, and that
@@ -1523,15 +1519,9 @@ This skill consists of `SKILL.md`, the reference files it lists
 `observation-log.md`, `signals.md`, `migration.md`,
 `starter-principles.md`) and `scripts/migrate-log.py`,
 `scripts/new-observation.sh`, `scripts/session-start-scan.sh`,
-`scripts/skill-load.sh` and `scripts/validate-skill-bundle.py`. If a referenced
-file is missing, the install is
-incomplete: proceed using the rules in `SKILL.md`, tell the user which
-files are missing, and point them to the full bundle at the canonical
-source (for the published version, the repository named in the attribution
-block). `SKILL.md` states the same rule ("Reference files"), because this
-file is one of the ones that can be missing: an upload path that keeps only
-`SKILL.md` produces exactly that install, and a rule kept only here would
-never be read in it.
+`scripts/skill-load.sh` and `scripts/validate-skill-bundle.py`. If any is
+missing, SKILL.md "Reference files" applies (the rule lives there because
+this file can be the missing one).
 
 ## Compaction behaviour
 
