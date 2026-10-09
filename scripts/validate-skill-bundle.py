@@ -103,7 +103,22 @@ PATH_RE = re.compile(r"`((?:references|scripts|assets)/[^`\s*?]+\.[A-Za-z0-9]+)`
 # example (`scripts/x/generate.py --logo ...`) out. Measured over 127 local
 # skills: 28 hits, 0 missing, no normalisation needed.
 CMD_PATH_RE = re.compile(r"(?:references|scripts|assets)/[^\s`'\"*?<>;|&]+\.[A-Za-z0-9]+")
-CMD_INTERP = {"python3", "python", "bash", "sh", "zsh", "node", "swift", "ruby", "perl", "run", "source"}
+CMD_INTERP = {"python3", "python", "py", "bash", "sh", "zsh", "node", "swift", "ruby", "perl", "run", "source"}
+# An interpreter's own options sit between it and the script: `py -3 x.py`
+# (the Windows launcher, which migration.md recommends where `python3` is the
+# Store alias), `python3 -X utf8 x.py`, `bash -eu x.sh`. Reading only the
+# token right after the interpreter missed every one. Per family: options
+# that take no value, options whose value is the next token, and options
+# after which the next token is not a script at all (`-m`, `-c`), so nothing
+# is checked. Other interpreters keep the token-right-after rule: their
+# option grammars are not tabled here.
+CMD_OPTS = {
+    "python": (re.compile(r"-[bBdEiIOPqRsSuvx]+|-[0-9]+(\.[0-9]+)?(-(32|64))?|-[XW]\S+"),
+               {"-X", "-W"}, re.compile(r"-[bBdEiIOPqRsSuvx]*[mc]\S*|-")),
+    "shell": (re.compile(r"[-+][aefhiklnpuvxBCEHPT]+|--(norc|noprofile|login|posix|verbose|noediting|restricted)"),
+              {"-o", "+o", "-O", "+O", "--rcfile", "--init-file"}, re.compile(r"-[a-zA-Z]*c[a-zA-Z]*|-s|-")),
+}
+CMD_FAMILY = {"python3": "python", "python": "python", "py": "python", "bash": "shell", "sh": "shell", "zsh": "shell"}
 BUILD_JUNK = {"__pycache__", ".DS_Store"}
 # Version-control metadata: a live skill can be a clone, a staged copy must
 # not be. The other checks ask what is MISSING; this one asks what is there
@@ -766,6 +781,34 @@ TEMPLATE_FIXTURES = [
 ]
 
 
+def interp_name(tok):
+    """`python3.12`, `python.exe`, `/usr/bin/python3` -> the CMD_INTERP name, else None."""
+    name = re.sub(r"(?i)\.exe$", "", tok.rsplit("/", 1)[-1])
+    name = re.sub(r"^python3\.?[0-9]+$", "python3", name)
+    return name if name in CMD_INTERP else None
+
+
+def script_index(toks, i):
+    """Index of the script after the interpreter at toks[i], past its own
+    options (CMD_OPTS); None where an option means no script follows."""
+    j = i + 1
+    fam = CMD_OPTS.get(CMD_FAMILY.get(interp_name(toks[i]), ""))
+    if not fam:
+        return j
+    flag, takes_value, no_script = fam
+    while j < len(toks):
+        t = toks[j]
+        if no_script.fullmatch(t):
+            return None
+        if t in takes_value:
+            j += 2
+        elif flag.fullmatch(t):
+            j += 1
+        else:
+            break
+    return j
+
+
 def command_paths(text):
     """Unqualified bundled paths in command position (see CMD_PATH_RE)."""
     prose = blank_fenced_code(text)
@@ -775,8 +818,12 @@ def command_paths(text):
     for chunk in chunks:
         for seg in re.split(r"&&|\|\||;|\|", chunk):
             toks = seg.split()
-            out.update(t for i, t in enumerate(toks)
-                       if i and toks[i - 1] in CMD_INTERP and CMD_PATH_RE.fullmatch(t))
+            for i, t in enumerate(toks):
+                if not interp_name(t):
+                    continue
+                j = script_index(toks, i)
+                if j is not None and j < len(toks) and CMD_PATH_RE.fullmatch(toks[j]):
+                    out.add(toks[j])
     return out
 
 
@@ -858,6 +905,20 @@ COMMAND_PATH_FIXTURES = [
     ("quoted example with no interpreter is skipped", "e.g. `scripts/x/generate.py --logo l.png`\n", set()),
     ("qualified path is skipped", "`python3 other-skill/scripts/a.py`\n", set()),
     ("path outside code is skipped", "python3 scripts/a.py in prose\n", set()),
+    ("py launcher", "`py scripts/a.py`\n", {"scripts/a.py"}),
+    ("py -3 version selector", "`py -3 scripts/a.py --x`\n", {"scripts/a.py"}),
+    ("py -3.12 version selector", "`py -3.12 scripts/a.py`\n", {"scripts/a.py"}),
+    ("py -3 -X utf8, fenced", "```\npy -3 -X utf8 scripts/a.py\n```\n", {"scripts/a.py"}),
+    ("python3 -X utf8", "`python3 -X utf8 scripts/a.py`\n", {"scripts/a.py"}),
+    ("python -u and python -B", "`python -u scripts/a.py && python -B scripts/b.py`\n",
+     {"scripts/a.py", "scripts/b.py"}),
+    ("python.exe and python3.12 spellings", "`python.exe scripts/a.py; python3.12 scripts/b.py`\n",
+     {"scripts/a.py", "scripts/b.py"}),
+    ("bash -eu and bash -o pipefail", "`bash -eu scripts/a.sh; bash -o pipefail scripts/b.sh`\n",
+     {"scripts/a.sh", "scripts/b.sh"}),
+    ("python3 -m pytest stays unchecked", "`python3 -m pytest scripts/test_x.py`\n", set()),
+    ("bash -c stays unchecked", "`bash -c scripts/a.sh`\n", set()),
+    ("npm run with -- stays unchecked", "`npm run build -- --out assets/out.png`\n", set()),
 ]
 
 
