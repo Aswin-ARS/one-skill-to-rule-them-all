@@ -197,7 +197,8 @@ upstream contribution is possible"), and an option built on it inherits
 the claim unverified. Settle such a premise BEFORE presenting the
 option, from what is already local — the checkout or copy the skill was
 installed from, a stored baseline, the file's own source and feedback line
-(or its frontmatter `metadata.source`).
+(or its frontmatter `metadata.source`, `author:` and `license:`), and the
+tool that generates it, if one does.
 Local provenance answers most of it, and it costs far less than a
 decision made on a false premise plus the re-ask that follows. Where the
 premise is genuinely remote (does the section still exist at upstream
@@ -762,8 +763,8 @@ of three categories:
 
 | Category | Detection | Action |
 |---|---|---|
-| (a) User-owned, no upstream | in the user's skills directory; not a git checkout; not refreshed from anywhere | normal staging flow |
-| (b) Writable but volatile, or foreign-maintained | path contains a plugin cache or version-pinned directory; or the skill is refreshed from an upstream by clone/copy or `git pull`; or **the file's own content declares a maintainer other than the user** — an attribution block naming another author, a canonical repository the user does not commit to, a `source:`/`upstream:` frontmatter field — wherever it is installed and however it got there, a hand-copied and hand-updated file included | never edit in place — the next update silently discards it, and no permission error ever fires; for a declared upstream, the route is the upstream report |
+| (a) User-owned, no upstream | in the user's skills directory; not a git checkout; not refreshed from anywhere; written by the user, not by a tool — or a fork recorded in `forked-skills.txt` | normal staging flow |
+| (b) Writable but volatile, or foreign-maintained | path contains a plugin cache or version-pinned directory; or the skill is refreshed from an upstream by clone/copy or `git pull`; or **the file's own content declares a maintainer other than the user** — an attribution block naming another author, a canonical repository the user does not commit to, a `source:`/`upstream:` frontmatter field, or third-party `author:`/`license:`/`version:` frontmatter with no fork recorded in `forked-skills.txt` — wherever it is installed and however it got there, a hand-copied and hand-updated file included; or **the file is written by a tool that will rewrite it** (a scaffolder, a CLI's `init`/`agent`/`sync` command, a spec or template generator), which leaves no maintainer mark at all | never edit in place — the next update silently discards it, and no permission error ever fires; for a declared upstream, the route is the upstream report |
 | (c) No on-disk file, or read-only | built-in / harness-provided skills (e.g. docx, pdf, xlsx, pptx, skill-creator); a mount that rejects writes | cannot be edited |
 
 Observations targeting (b) or (c) are NOT skipped — the destination must
@@ -781,7 +782,13 @@ that upstream would not take; editing the file in place is not on the
 menu, however writable it is. Provenance is a property of the artefact
 and is stated in its first lines; install location is a fact about this
 machine and says nothing about who maintains the file, so read the block
-before the path. This skill is the standing example: wherever the user is not its
+before the path. A generated file is the exception that states nothing:
+its writer is a tool, not an author, so before putting a skill in (a) ask
+what writes the file, not only what refreshes its directory. Where the
+user has adopted a vendored copy on purpose, record it once, one line per
+skill in `skill-observations/forked-skills.txt` (name, date, reason):
+later reviews read the decision instead of re-deriving it from the path,
+and a recorded fork is (a). This skill is the standing example: wherever the user is not its
 maintainer, `task-observer` is (b). Choosing the companion route may mean
 creating the `{skill}-extras` skill in this review, which the Constraints
 allow as the one exception to "no new skills in a review". Grow the (c) list when an update fails for

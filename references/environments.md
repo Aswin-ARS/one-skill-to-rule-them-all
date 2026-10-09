@@ -373,8 +373,8 @@ artefact the pin governs (the derived paths in the activation block
 above), not the log alone: `skill-updates/` with `PENDING.md` and every
 dated staging directory, `cross-cutting-principles.md` and
 `skill-families.md` (merged by substance where the target has its own),
-`last-review-date.txt` (keep the later date),
-`starter-principles-reviewed.txt` (keep the newer version), and
+`last-review-date.txt` (keep the later date), `forked-skills.txt` (keep
+the union), `starter-principles-reviewed.txt` (keep the newer version), and
 `reviews/` and `checkpoints.log` as history. Step 6 reads `skill-updates/`
 at the current root only, so staged work left at the old one is
 invisible, and an absent `PENDING.md` reads as "nothing staged". Move staged directories whole; at the new root they go through
