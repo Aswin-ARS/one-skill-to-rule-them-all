@@ -105,9 +105,12 @@ skill" (some upload paths keep only `SKILL.md`); its episodes do not run.
    when a missing mount is read as one. A permission-classifier refusal of
    that request (it names the classifier and gives a bracketed reason; a
    user decline does not) falls under the **How to Log** denial rule: at
-   most one identical retry, told to the user, never another tool.
-   Never assert the mount's state, connected or
-   not, from an environment flag, a config file's presence in context, or
+   most one identical retry, told to the user, never another tool. Refused
+   again, or no folder-picker or device-bridge tool after one tool search:
+   load `references/environments.md` ("No link to the user's computer"),
+   mandatory, and keep its order — the log, else ask to park in the user's
+   memory inbox, else a handoff file. Never assert the mount's state, connected
+   or not, from an environment flag, a config file's presence in context, or
    memory of an earlier turn: that claim needs a probe in the same turn.
    **A successful probe does not mean the activation config fired.**
    On turn 1 a merely late config is indistinguishable from an absent one:
@@ -326,15 +329,15 @@ write; a remembered "ask whether" is not enforcement. Roughly every third
 completion is the rule; the count need not be precise. (Exception for a
 priced-write workspace: `references/environments.md`.)
 
-**A denied or failed write is not a read-only log.** Retry once before
-concluding the workspace is unwritable, and try a second tool reaching the
-same path — a classifier can deny one interface while allowing another,
-and consecutive denials from a probabilistic gatekeeper are noise, not a
-wall. Report "failed N times", never "cannot be done", unless retries and
-alternate interfaces are exhausted; otherwise observations are silently
-lost for the rest of the session. A mode that refuses every write by
-design is the exception: defer, don't retry (`references/environments.md`,
-"A mode that forbids every write by design").
+**A denied or failed write is not a read-only log.** A transient failure
+(an I/O error, a timeout, a tool error with no permission decision) gets
+one retry. A permission or classifier denial is authoritative: tell the
+user in one line what was denied and why the write mattered, then carry
+the observations in report-back or handoff mode (`references/environments.md`).
+Keep at most one identical retry of a classifier denial, told to the user
+as a check for a probabilistic false negative — never a different tool. A
+mode that refuses every write by design is neither: defer, don't retry
+(`references/environments.md`, "A mode that forbids every write by design").
 
 **Deliverable-event flush.** Whenever a unit of work is declared complete
 to a human — a file handed over, a render, a staged skill file, a
@@ -357,10 +360,10 @@ no report and no logged observation.)
 
 **Two gaps this pairing still leaves:** the 3rd-completion checkpoint is
 inert in a session using no todos, and "is this a major deliverable?" is a
-self-assessment — so the deliverable flush is the only enforcement left
-and must be applied deliberately. Before adding or changing any
-enforcement trigger, load `references/observation-log.md` ("Two gaps the
-checkpoint pairing still leaves — and the rule behind both").
+self-assessment — so a chat-only session with no todos has no trigger at
+all unless the harness supplies one (a turn-end hook). Before adding or
+changing any enforcement trigger, load `references/observation-log.md`
+("Two gaps the checkpoint pairing still leaves — and the rule behind both").
 
 **Id and filename.** Each observation is `NNNN-short-slug.md` (zero-padded
 id + a kebab-case slug from the title). The id is the highest of three

@@ -12,6 +12,13 @@ Usage
   python3 validate-skill-bundle.py <staged-skill-dir> [--bundle file.skill] [--pack out.skill]
   python3 validate-skill-bundle.py --repo-only <repo-dir>
   python3 validate-skill-bundle.py --selftest   # check fixtures and the scan script; exit 1 on any mismatch
+  python3 validate-skill-bundle.py --compare-frontmatter <live/SKILL.md> <staged/SKILL.md>
+  python3 validate-skill-bundle.py --help       # print this usage block; exit 0 (also -h)
+
+  --compare-frontmatter  the reconciliation gate's installed-vs-staged
+                compare: frontmatter by parsed value (installer quoting and
+                folding ignored), body byte for byte. Exit 0 = equal, 1 = a
+                real difference (named), 2 = unreadable input.
 
   --pack        writes a well-formed bundle (POSIX separators on any platform)
                 after the directory checks pass, then validates it. An
@@ -178,6 +185,137 @@ FALLBACK_NAME_FIXTURES = [
 ]
 
 
+# --- Installed-vs-staged frontmatter comparison ------------------------------
+# The installer rewrites the frontmatter it writes back: it quotes or unquotes
+# `name:`, re-quotes `version: 1.5.0` as `version: '1.5.0'`, and turns a folded
+# `description: >` block into one double-quoted line. A text diff reports every
+# such copy as differing, and a normaliser that covers only some of those
+# rewrites turns the rest into routine false alarms — which train the reader
+# to wave real differences through. So the comparison is by PARSED VALUE: both
+# headers are parsed with every scalar kept as a string (PyYAML's BaseLoader,
+# so `1.5.0` and '1.5.0' are the same value and nothing is type-coerced), the
+# trailing newline a block scalar carries is stripped, and the body after the
+# closing `---` is compared byte for byte. Without PyYAML the fallback below
+# reads top-level keys only and says so.
+
+def split_skill_md(text):
+    """(frontmatter text, body after the closing `---` line), or (None, text)."""
+    m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+    return (m.group(1), text[m.end():]) if m else (None, text)
+
+
+def _unquote(raw):
+    """One YAML flow scalar as the parser returns it: quotes and escapes
+    resolved, a trailing comment dropped from a plain scalar."""
+    raw = raw.strip()
+    if len(raw) >= 2 and raw[0] == raw[-1] == '"':
+        return re.sub(r'\\(["\\n/])', lambda m: "\n" if m.group(1) == "n" else m.group(1), raw[1:-1])
+    if len(raw) >= 2 and raw[0] == raw[-1] == "'":
+        return raw[1:-1].replace("''", "'")
+    return re.sub(r"[ \t]+#.*$", "", raw)
+
+
+def fallback_fields(fm):
+    """Top-level keys of a frontmatter block without PyYAML: flow scalars via
+    _unquote(), a quoted value continued over several lines folded with
+    spaces, block scalars (`>`, `|`) via folded_description()'s rules, and a
+    nested block (indented lines under an empty value) kept as its
+    whitespace-normalised text. A floor, not a parser: it reads the shapes the
+    installer writes and the template asks for."""
+    out, key, buf = {}, None, []
+
+    def close():
+        if key is None:
+            return
+        first, rest = buf[0], buf[1:]
+        if re.match(r"^[>|][-+]?\d?\s*$", first):
+            out[key] = folded_description("description: " + "\n".join([first] + rest))
+        elif first[:1] in ('"', "'") and rest:
+            out[key] = _unquote(" ".join([first] + [r.strip() for r in rest]))
+        elif not first and rest:
+            out[key] = " ".join(" ".join(rest).split())
+        else:
+            out[key] = _unquote(first)
+
+    for line in fm.splitlines():
+        m = re.match(r"^([A-Za-z_][\w.-]*):(?:[ \t]+(.*))?$", line)
+        if m:
+            close()
+            key, buf = m.group(1), [(m.group(2) or "").strip()]
+        elif key is not None:
+            buf.append(line)
+    close()
+    return out
+
+
+def parse_frontmatter_values(fm, use_yaml=True):
+    """(dict of top-level key -> value, parser label). Strings lose the
+    trailing newline(s) a block scalar or an installer's `\\n` carries."""
+    data, how = None, "fallback (no PyYAML: top-level keys only)"
+    if use_yaml:
+        try:
+            import yaml
+            data = yaml.load(fm, Loader=yaml.BaseLoader)
+            how = "PyYAML BaseLoader"
+        except ImportError:
+            pass
+    if data is None:
+        data = fallback_fields(fm)
+    if not isinstance(data, dict):
+        raise ValueError("frontmatter does not parse to a mapping")
+    return {k: (v.rstrip("\n") if isinstance(v, str) else v) for k, v in data.items()}, how
+
+
+def compare_frontmatter_texts(a, b, use_yaml=True):
+    """Compare two SKILL.md texts the way the reconciliation gate needs:
+    returns (differing frontmatter keys, body equal?, parser label)."""
+    (fa, ba), (fb, bb) = split_skill_md(a), split_skill_md(b)
+    if fa is None or fb is None:
+        raise ValueError("no leading --- frontmatter block")
+    va, how = parse_frontmatter_values(fa, use_yaml)
+    vb, _ = parse_frontmatter_values(fb, use_yaml)
+    keys = sorted(k for k in set(va) | set(vb) if va.get(k) != vb.get(k))
+    return keys, ba == bb, how
+
+
+def compare_frontmatter_main(path_a, path_b):
+    """--compare-frontmatter A B: exit 0 = same skill text (installer quoting
+    aside), 1 = a real difference (each one named), 2 = unreadable input."""
+    try:
+        ta = pathlib.Path(path_a).read_text(encoding="utf-8")
+        tb = pathlib.Path(path_b).read_text(encoding="utf-8")
+        keys, body_equal, how = compare_frontmatter_texts(ta, tb)
+    except (OSError, ValueError, UnicodeDecodeError) as e:
+        print(f"compare: cannot compare: {e}"); return 2
+    except Exception as e:   # a YAML error: the file is broken, say so
+        print(f"compare: frontmatter did not parse: {e}"); return 2
+    print(f"parser: {how}")
+    print("frontmatter: equal by value" if not keys
+          else "frontmatter: DIFFERS in " + ", ".join(keys))
+    if body_equal:
+        print("body: equal byte for byte")
+    else:
+        la = split_skill_md(ta)[1].splitlines()
+        lb = split_skill_md(tb)[1].splitlines()
+        n = next((i for i, (x, y) in enumerate(zip(la, lb)) if x != y), min(len(la), len(lb)))
+        print(f"body: DIFFERS (first at body line {n + 1}; {len(la)} vs {len(lb)} lines)")
+    return 0 if not keys and body_equal else 1
+
+
+_FOLDED = ("---\nname: x\ndescription: >\n  One two: three,\n  four.\n---\nbody\n")
+# (name, text A, text B, frontmatter keys that must differ, body must be equal)
+COMPARE_FM_FIXTURES = [
+    ("quoted vs unquoted name", '---\nname: "x"\n---\nbody\n', "---\nname: x\n---\nbody\n", [], True),
+    ("version '1.5.0' vs 1.5.0", "---\nname: x\nversion: '1.5.0'\n---\nb\n",
+     "---\nname: x\nversion: 1.5.0\n---\nb\n", [], True),
+    ("folded description vs one-line quoted string, same text", _FOLDED,
+     '---\nname: "x"\ndescription: "One two: three, four.\\n"\n---\nbody\n', [], True),
+    ("a real value change is still reported", "---\nname: x\nversion: 1.5.0\n---\nb\n",
+     "---\nname: x\nversion: '1.6.0'\n---\nb\n", ["version"], True),
+    ("a body change is still reported", '---\nname: "x"\n---\nbody\n', "---\nname: x\n---\nbody2\n", [], False),
+]
+
+
 def check_frontmatter_shape(fm, fails, yaml_available):
     """Structural checks that do not need PyYAML.
 
@@ -280,6 +418,60 @@ def check_core_size(skill_md, fails):
             f"commit — a trim is locked in, not left as headroom.")
 
 
+def index_misses(body):
+    """Headings below a file's `## Contents` index that the index lacks.
+
+    The index ends at the next `## ` heading, or — in a file whose entries
+    are all `###` (a numbered principles list) — at the first `###` entry, a
+    horizontal rule, or the end of the file. Bounding it by `## ` alone
+    matched nothing in such a file, so the check skipped exactly the index
+    that changes most often, and a numbered entry shipped with no Contents
+    line. Every `##`/`###` heading after the index, numbered `### N.`
+    entries included, must have its line.
+    """
+    def norm(s):
+        return " ".join(s.split())
+
+    m = re.search(r"(?ms)^## Contents[ \t]*\n(.*?)(?=^## |^### |^-{3,}[ \t]*$|\Z)", body)
+    if not m:
+        return []             # a file may legitimately have no index
+    # Index entries wrap, and legitimately carry a parenthetical the
+    # heading does not ("Lean Content (including progressive
+    # disclosure…)"). So: join continuation lines into their entry, then
+    # match a heading as a PREFIX of an entry, not by equality. Requiring
+    # equality reported a correctly-indexed section as missing — the
+    # check's own first finding was its own defect.
+    entries, cur = [], None
+    for line in m.group(1).splitlines():
+        if re.match(r"^\s*-\s+", line):
+            if cur is not None:
+                entries.append(norm(cur))
+            cur = re.sub(r"^\s*-\s+", "", line)
+        elif cur is not None and line.strip():
+            cur += " " + line.strip()
+    if cur is not None:
+        entries.append(norm(cur))
+    # Headings below the index, excluding the index itself
+    missing = []
+    for h in re.findall(r"(?m)^#{2,3}\s+(.+?)\s*$", body[m.end():]):
+        hn = norm(h)
+        if not any(e == hn or e.startswith(hn + " ") or e.startswith(hn + "(")
+                   for e in entries):
+            missing.append(h)
+    return missing
+
+
+# (name, reference-file text, headings index_misses must report)
+INDEX_FIXTURES = [
+    ("###-only file with every entry indexed passes",
+     "# T\n\n## Contents\n\n- 1. One\n- 2. Two\n\n---\n\n### 1. One\ntext\n\n### 2. Two\ntext\n", []),
+    ("###-only file missing one Contents line fails",
+     "# T\n\n## Contents\n\n- 1. One\n\n### 1. One\ntext\n\n### 2. Two\ntext\n", ["2. Two"]),
+    ("## sections still bound the index",
+     "# T\n\n## Contents\n\n- A\n\n## A\n\n### Sub\n", ["Sub"]),
+]
+
+
 def check_reference_indexes(skill_dir, fails):
     """Every heading in a reference file appears in that file's own Contents.
 
@@ -308,33 +500,8 @@ def check_reference_indexes(skill_dir, fails):
     if not refs.is_dir():
         return
     for p in sorted(refs.glob("*.md")):
-        body = defence(p.read_text(encoding="utf-8"))
-        m = re.search(r"(?ms)^## Contents\s*\n(.*?)(?=^## )", body)
-        if not m:
-            continue          # a file may legitimately have no index
-        # Index entries wrap, and legitimately carry a parenthetical the
-        # heading does not ("Lean Content (including progressive
-        # disclosure…)"). So: join continuation lines into their entry, then
-        # match a heading as a PREFIX of an entry, not by equality. Requiring
-        # equality reported a correctly-indexed section as missing — the
-        # check's own first finding was its own defect.
-        entries, cur = [], None
-        for line in m.group(1).splitlines():
-            if re.match(r"^\s*-\s+", line):
-                if cur is not None:
-                    entries.append(norm(cur))
-                cur = re.sub(r"^\s*-\s+", "", line)
-            elif cur is not None and line.strip():
-                cur += " " + line.strip()
-        if cur is not None:
-            entries.append(norm(cur))
-        # Headings below the index, excluding the index itself
-        after = body[m.end():]
-        for h in re.findall(r"(?m)^#{2,3}\s+(.+?)\s*$", after):
-            hn = norm(h)
-            if not any(e == hn or e.startswith(hn + " ") or e.startswith(hn + "(")
-                       for e in entries):
-                fails.append(f"{p.name}: heading not in its own Contents index: {h!r}")
+        for h in index_misses(defence(p.read_text(encoding="utf-8"))):
+            fails.append(f"{p.name}: heading not in its own Contents index: {h!r}")
 
     core = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
 
@@ -342,10 +509,16 @@ def check_reference_indexes(skill_dir, fails):
     # The core's size ceiling does not transfer to reference files, because
     # their cost is conditional: a long file loaded once a month is cheap. The
     # signal that matters is how many DISTINCT episodes pull a file in, since
-    # every one of them pays for the whole file. Measured once on this bundle,
-    # the largest reference (1,105 lines) had a single trigger and was
-    # correctly shaped, while a smaller one carried fourteen — so a size rule
-    # would have flagged the healthy file and missed the mis-shaped one.
+    # every one of them pays for the whole file. Measured on this bundle, the
+    # largest reference had a single trigger and was correctly shaped while a
+    # smaller one carried many — so a size rule would have flagged the healthy
+    # file and missed the mis-shaped one. The figures themselves are whatever
+    # the `reference shape` line below prints on this run; never copy them
+    # into this comment, where they go stale.
+    #
+    # Only pointers that name a section (`references/x.md` ("Heading")) are
+    # counted, so a file the core cites by filename alone reads 0; the label
+    # says so rather than presenting the figure as every load trigger.
     #
     # Printed rather than enforced on purpose: one snapshot is not enough to
     # site a threshold, and the same measurement already overturned the rule
@@ -360,11 +533,11 @@ def check_reference_indexes(skill_dir, fails):
             t = triggers.get(p.name)
             rows.append((p.name, n, len(t) if t is not None else None))
         worst = max((t for _, _, t in rows if t is not None), default=0)
-        print("reference shape (lines / distinct load triggers; not gated; "
+        print("reference shape (lines / distinct section-named load triggers; not gated; "
               "n/a = no pointer naming a section): "
               + ", ".join(f"{n}={ln}/{'n/a' if t is None else t}" for n, ln, t in rows))
         if worst >= 10:
-            print(f"note: one reference file carries {worst} distinct load triggers — "
+            print(f"note: one reference file carries {worst} distinct section-named load triggers — "
                   f"split by episode is indicated when this grows; size is not the signal")
 
     for m in re.finditer(r'`references/([a-z-]+\.md)`[^(]{0,40}\("([^"]+)"\)', core, re.S):
@@ -694,6 +867,39 @@ def scan_case(scenario, pass_root):
         return r.returncode, r.stdout, len(ck.read_text(encoding="utf-8").splitlines())
 
 
+# scripts/skill-load.sh, the per-skill lookup run beside each Skill
+# invocation: (name, skill argument, absolute root?, exit status, stdout
+# substring, checkpoint lines written). The fixture holds one match, one
+# prefix-only name, one closed entry and one body-only mention.
+LOAD_SCRIPT = pathlib.Path(__file__).resolve().parent / "skill-load.sh"
+LOAD_FIXTURES = [
+    ("exact name, open only, frontmatter only", "foo", True, 0, "foo: 1 open observations\n0001-a.md", 1),
+    ("plugin-qualified listing finds the bare-name entry", "plug:foo", True, 0,
+     "plug:foo: 1 open observations\n0001-a.md", 1),
+    ("relative root: refused, nothing written", "foo", False, 2, "", 0),
+]
+
+
+def load_case(skill, absolute):
+    import os
+    import subprocess
+    with tempfile.TemporaryDirectory() as tmp:
+        root = pathlib.Path(tmp) / "work space"
+        log = root / "skill-observations" / "observation-log"
+        log.mkdir(parents=True)
+        ck = root / "skill-observations" / "checkpoints.log"
+        ck.write_text("", encoding="utf-8")
+        for f, head, body in [("0001-a.md", "skill: [foo, bar]\nstatus: open", ""),
+                              ("0002-b.md", "skill: [foo-extras]\nstatus: open", ""),
+                              ("0003-c.md", "skill: foo\nstatus: actioned", ""),
+                              ("0004-d.md", "skill: [bar]\nstatus: open", "skill: foo\n")]:
+            (log / f).write_text(f"---\nid: 1\n{head}\n---\n{body}", encoding="utf-8")
+        arg = str(root) if absolute else os.path.relpath(root, tmp)
+        r = subprocess.run(["bash", str(LOAD_SCRIPT), arg, skill], cwd=tmp, capture_output=True,
+                           text=True, encoding="utf-8", errors="replace")
+        return r.returncode, r.stdout, len(ck.read_text(encoding="utf-8").splitlines())
+
+
 def selftest():
     bad = total = 0
     for name, text, must_fail in RESIDUE_FIXTURES:
@@ -709,6 +915,24 @@ def selftest():
         ok = bool(NAME_RE.match(fallback_name(f"name: {value}\n"))) == kebab
         bad += not ok; total += 1
         print(f"{'ok  ' if ok else 'FAIL'} fallback name: {value!r}")
+    try:
+        import yaml  # noqa: F401
+        branches = (True, False)
+    except ImportError:
+        branches = (False,)
+        print("skip compare-frontmatter PyYAML branch: PyYAML not installed")
+    for use_yaml in branches:
+        for name, a, b, want_keys, want_body in COMPARE_FM_FIXTURES:
+            keys, body_equal, _ = compare_frontmatter_texts(a, b, use_yaml)
+            ok = keys == want_keys and body_equal == want_body
+            bad += not ok; total += 1
+            print(f"{'ok  ' if ok else 'FAIL'} compare-frontmatter "
+                  f"({'PyYAML' if use_yaml else 'fallback'}): {name}"
+                  + ("" if ok else f" (keys {keys}, body equal {body_equal})"))
+    for name, text, want in INDEX_FIXTURES:
+        ok = index_misses(text) == want
+        bad += not ok; total += 1
+        print(f"{'ok  ' if ok else 'FAIL'} reference index: {name}")
     for name, text, want in COMMAND_PATH_FIXTURES:
         ok = command_paths(text) == want
         bad += not ok; total += 1
@@ -744,6 +968,19 @@ def selftest():
                 (out.count(b"\r\n") == 5 if eol == "\r\n" else b"\r" not in out)
         bad += not ok; total += 1
         print(f"{'ok  ' if ok else 'FAIL'} name quoting keeps {'CRLF' if eol == chr(13) + chr(10) else 'LF'} endings")
+    if shutil.which("bash") and LOAD_SCRIPT.is_file():
+        ok = subprocess.run(["bash", "-n", str(LOAD_SCRIPT)]).returncode == 0
+        bad += not ok; total += 1
+        print(f"{'ok  ' if ok else 'FAIL'} skill-load script: bash -n passes")
+        for name, skill, absolute, want_rc, want_out, want_ck in LOAD_FIXTURES:
+            rc, out, ck = load_case(skill, absolute)
+            ok = rc == want_rc and want_out in out and ck == want_ck
+            bad += not ok; total += 1
+            print(f"{'ok  ' if ok else 'FAIL'} skill-load script: {name}"
+                  + ("" if ok else f" (exit {rc}, {ck} checkpoint lines, out {out!r})"))
+    elif shutil.which("bash"):
+        bad += 1; total += 1
+        print(f"FAIL skill-load script: {LOAD_SCRIPT.name} missing beside this file")
     print(f"selftest: {total - bad}/{total} passed")
     return 1 if bad else 0
 
@@ -1015,8 +1252,14 @@ def main(argv):
                 pass
     if len(argv) < 2:
         print(__doc__); return 2
+    if argv[1] in ("--help", "-h"):
+        print(__doc__); return 0
     if argv[1] == "--selftest":
         return selftest()
+    if argv[1] == "--compare-frontmatter":
+        if len(argv) != 4:
+            print("usage: --compare-frontmatter <SKILL.md A> <SKILL.md B>"); return 2
+        return compare_frontmatter_main(argv[2], argv[3])
     if "--repo-only" in argv:
         fails = []
         repo = argv[argv.index("--repo-only") + 1]

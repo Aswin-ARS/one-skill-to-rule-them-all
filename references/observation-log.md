@@ -1697,7 +1697,14 @@ in which nothing was logged at all.**
    calls and shell commands never trips it. It is armed only in sessions that
    happen to use todos, so it is not a safety net that is always present. When
    a session runs without them, the deliverable flush is the only enforcement
-   left and must be applied deliberately.
+   left and must be applied deliberately — and in a chat-only session, whose
+   output never looks like a handover, it does not fire at all (observed: four
+   observations written only after the user asked "any observations?"). The
+   barrier for that shape is a harness hook at the turn boundary: in Claude
+   Code the stop-hook recipe (`references/environments.md`, "A stop hook — the
+   per-task backstop as a harness event"); where the harness offers plugin
+   hooks on turn completion, a hook that notes a turn which used tools and
+   wrote nothing to `observation-log/` or `checkpoints.log`.
 2. *"Is this a major deliverable?" is a self-assessment, and self-assessment is
    what fails under load.* Prefer triggers unmistakable in the tool record over
    ones needing a judgement call. The flush point is a **property, not a

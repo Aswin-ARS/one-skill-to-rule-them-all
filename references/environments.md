@@ -35,6 +35,7 @@ in an environment without filesystem access.
 - User-facing documentation
 - Repo/maintainer sessions — verify commit identity before writing
 - Handoff-doc mode (no persistent storage)
+  - No link to the user's computer
 - Handoff-doc analysis (when one arrives)
 
 ## Recommended activation setup
@@ -849,11 +850,24 @@ probe cannot ride in batch 1. Batch 1 then carries the deferred-tool load
 together with the session-start skill loads; batch 2 carries the probe,
 the session-start scan and one `skill-load.sh` call per skill loaded in
 batch 1 — the one recorded exception to the lookup riding in its load's
-batch, because the script runs through the same deferred tool. Record the split in the start-up lines ("probe in batch 2: device
+batch, because the script runs through the same deferred tool (scripts
+absent from the device: "Environment mappings", "Where the scripts are not
+on the device"). Record the split in the start-up lines ("probe in batch 2: device
 tool deferred"), so a review reading the transcript sees an environmental
 order, not a skipped rule. The failure shape: a rule that names batch 1's
 content cannot be met when one of its tools does not exist yet, and an
 unrecorded workaround reads the same as a violation.
+
+**A server still connecting is the same split with nothing to load.** When
+the server providing the probe is still connecting, its tools are absent
+from the tool surface, deferred list included, so batch 1 has no probe call
+to carry. Batch 1 then carries the session-start skill loads plus the tool
+search that waits for that server; the probe is the first call of batch 2,
+and the start-up lines say so ("probe in batch 2: device server still
+connecting"). Never put a placeholder command in the probe's slot — an
+`echo`, or an `ls` of the cloud container: it probes nothing and reads in
+the transcript like a probe that passed. In a session with two filesystems
+a container `ls` never counts as the workspace probe.
 
 ### Install-layout hazards — three ways a skill silently stops existing
 
@@ -1011,6 +1025,11 @@ What follows from that:
   mode rather than a policy — once the user switched out of auto mode, the
   hook tier installed with no friction at all. (3) Leave activation at the
   description layer and say plainly which tier is in place.
+- **The objection follows the content, not the file.** A documentation
+  page that quotes the activation text can be refused on the same grounds
+  as the config edit. Report the setup as incomplete while either the
+  config or its write-up has not landed, and do not reword either to get
+  past the classifier.
 
 **The ladder is not monotonic.** Tier 4 — the session-start hook, which this
 file elsewhere calls the only enforced option — can be blocked *harder* than
@@ -1027,16 +1046,21 @@ reach. Do not present the ladder to the user as "if 3 fails, 4 will work".
 
 Some modes — Claude Code's plan mode, any propose-only mode — permit
 every read and refuse every write for the whole turn. That is not a
-denied write: retrying and switching tools are wasted calls, the log is
-not unwritable, and "failed N times" is the wrong report when the
-environment is telling the truth. A gatekeeper and a mode are opposite
-failures — one is retried, the other accepted and deferred.
+denied write: a retry is a wasted call, the log is not unwritable, and a
+denial report is the wrong report when the environment is telling the
+truth. A gatekeeper and a mode are different failures — a gatekeeper's
+denial is reported to the user and its observations carried in
+report-back or handoff mode (SKILL.md, How to Log); a mode is accepted
+and its writes deferred.
 
 1. Run the read steps normally: the scan, the review-date check, the
    per-skill lookup. A read-only session is fully observant. Run them
    in a command of their own, without the scan's `checkpoints.log`
    append: a mode can refuse a command that mixes a read with a write as
-   a whole, and the refusal takes the reads with it.
+   a whole, and the refusal takes the reads with it. The scan script
+   writes that line, so a mode that refuses it gets the flat reads
+   (`observation-log.md`, "A refused snippet is a degraded path, never a
+   skipped step").
 2. Defer, never skip, the writes: storage creation, `.id-floor`,
    archival, the `checkpoints.log` line. Ids are resolved at flush
    time, never now.
@@ -1251,6 +1275,25 @@ container and committed afterwards. The failure shape: a committed file
 carries an id derived from a listing taken earlier, and the prefix guard
 never ran because it lives in the command the commit bypassed; the lagging
 `.id-floor` appears first and the duplicate id at the next review.
+
+**Where the scripts are not on the device.** In a bridged session the
+installed skill tree, scripts included, can exist only in the cloud
+container while the log lives on the device. First look for the review's
+copy at `skill-observations/.bin/`: its `MANIFEST` records the installed
+`version:` and a sha256 per script, refreshed by every review that confirms
+an install (`weekly-review.md`, Step 1 gate). Hash the installed scripts on
+your side and run the `.bin/` copy only when every digest matches the
+manifest. Absent or mismatched, look for another copy in the workspace — a
+staged copy under `skill-updates/*/task-observer/scripts/` — and compare its
+digest (`md5sum` or
+`sha256sum`, run on both sides) with the installed scripts BEFORE running
+it, and run it only on a match: a staged copy can be an unreleased version
+that nothing refreshes on install. With no matching copy, transfer the
+scripts to the device — a permission-classifier denial of that transfer
+gets at most one identical retry, told to the user (SKILL.md, How to Log)
+— or run the inline id snippet through the device shell. Never a
+hand-derived id. The failure shape: a writer that cannot reach the helper
+improvises the id, and the `.id-floor` lags until the next review finds it.
 
 | Capability | Claude Cowork | Claude Code | Web chat / no filesystem |
 |---|---|---|---|
@@ -1588,9 +1631,11 @@ is the alternative remedy.
 The methodology is environment-independent; only persistence varies. In
 web-chat-style environments, collect observations in-session and deliver
 them in a structured handoff document the user stores and pastes into the
-next session. **Offer the handoff proactively when the conversation winds
-down** — a premature offer is a minor interruption; a missing one is lost
-work.
+next session. Where the surface has a user memory store, its inbox comes
+first and the handoff document is the last resort (fallback order: "No
+link to the user's computer" below). **Offer the handoff proactively when
+the conversation winds down** — a premature offer is a minor interruption;
+a missing one is lost work.
 
 ```markdown
 # Session Handoff: [Session Topic]
@@ -1614,6 +1659,57 @@ next session writes each as its own file in `observation-log/`]
 ## Working Artifacts
 [drafts/analyses in full]
 ```
+
+### No link to the user's computer
+
+A cloud or scheduled run can have a filesystem of its own and no route to
+the workspace: the probe fails, and no folder-picker or device-bridge tool
+is on the tool surface — absent, not denied. Check once with a tool
+search; if none appears, the request-and-retry branch of Session Start
+step 1 has nothing to call, so skip it. The same file is the landing
+place when the folder request was refused and the one permitted retry was
+refused too.
+
+**Fallback order when the log is unreachable.** (a) The observation log.
+(b) A user-scoped store this surface can write and every other surface
+the user works from can read — a user memory store is the common case —
+in one dedicated inbox file (e.g. `/areas/observation-inbox.md`), never
+the preferences file or any other file injected into every session, where
+an entry reads as a standing rule. (c) The handoff file below, the last
+resort: on a phone it is lost unless the user carries it by hand. The
+failure shape: a fallback only the desktop can reach turns every
+observation from a phone or an unlinked cloud session into chat text
+nobody files.
+
+**A memory write needs the user's explicit ask, and skill text is not
+one.** A memory system writes only on an explicit user request, so ask in
+one line — "The observation log isn't reachable — park this in memory for
+the next review?" — and a yes is the request; a no, or an unattended run
+with nobody to ask, goes to (c). One entry per observation: date, target
+skill(s), Issue / Improvement / Principle in compressed form, session
+context — no id, which only a session with the log can derive. Report the
+condition as with (c), naming the inbox file instead of a path. The inbox
+holds observations only: tasks and other loose ends go to their own
+channel, because the review turns every inbox entry into an observation
+file (`weekly-review.md`, Step 1, "Drain the observation inbox").
+
+Where (b) is unavailable or declined, write a handoff file to the
+session's output location (wherever its deliverables go), never only into
+the final message:
+
+- every observation in full frontmatter, with `id: TBD` — the id is
+  derived from a log this session cannot read;
+- a named list of the checks not performed — id derivation, restatement
+  check against existing entries, sibling check — which the next session
+  with the log runs before writing any of the files;
+- in the run's report, the condition by name: "this session has no link
+  to your computer; observations are in a handoff file", with its path.
+
+Name the condition, not its permanence. A session can become linked
+mid-run (a link notice, after which the bridge tools appear), so re-check
+the tool surface before the final flush rather than asserting the link
+cannot be made. The session that picks the file up handles it as below,
+completing the listed checks before it writes any observation file.
 
 ## Handoff-doc analysis (when one arrives)
 

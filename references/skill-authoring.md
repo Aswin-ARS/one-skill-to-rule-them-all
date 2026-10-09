@@ -578,6 +578,38 @@ blocks, no commands: a read-back proves the clipboard at the moment of the
 read, and anything copied before the paste replaces it. The read-back
 after posting (3) stays.
 
+## The description has more than one reader
+
+A published skill's `description` is read by three systems and written for
+one. It is the runtime trigger an agent matches to decide whether to load
+the skill. It is the search field harvested skill directories index, often
+ranked by nothing better than a substring match. And through those
+directory pages it is part of the text AI answers ground on when someone
+asks whether a tool like this exists. A trigger wants precision about when
+to load; a directory search wants the words the audience types. The two
+pull apart, and the trade-off resolves differently per skill, so it is
+stated here, not settled.
+
+The deciding fact is whether loading still depends on the description. A
+skill that ships its own activation layer — a CLAUDE.md line, a
+session-start hook, an explicit invocation convention — has decoupled
+loading from description matching, and its description may carry audience
+vocabulary. A skill that relies on description matching alone has not:
+loosening its description buys discovery at the cost of false loads, each
+one a full core read in a session that did not need it.
+
+Two guards where the description is free to change. Every added term must
+be one the author would defend as an accurate description of what the
+skill does — the test is accuracy, not search volume, and a stuffed
+description is read by the very maintainers a project pitches to; every
+added word also spends the character budget the delivery gate measures.
+And directories hold stale copies of the frontmatter, refreshed on their
+own schedule, so a change is measurable only after weeks: record the
+before state (terms searched, result positions) when the change ships, and
+compare then. The failure shape: a field named for one consumer acquires
+others once the artefact is published, and nothing in the authoring
+workflow reads it from their side.
+
 ## Confidentiality layers
 
 The open-source/internal boundary is a confidentiality boundary; enforce it
