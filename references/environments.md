@@ -273,6 +273,24 @@ block in `weekly-review.md` before consolidating anything — it defines
 that case and the aggregate review that serves it. A reader who stops at
 this paragraph consolidates a set that was meant to stay separate.
 
+**Stable is not the same as always available.** A folder in a synced or
+network drive passes every test above — absolute, outside any checkout,
+the same path every day — and still fails the one a session start needs:
+when the drive is not mounted, the log is unreadable and a hook script
+stored there does not resolve, so a hook registered to fail quietly
+starts the session with no activation and no error. Before pinning, ask
+two questions. Is this storage mounted every time a session starts on
+this machine, offline and before the sync client has started included?
+Is it the user's own, rather than an organisation's that can unmount,
+retain or audit it? Unless both answers are yes, propose a local folder
+under the user's home directory, and carry the log between machines by
+an explicit copy to the user's own storage or through the repository
+route ("Git as an optional staging medium" below; `observation-log.md`,
+"When the workspace is under version control", for the two-install
+case), not through a live-synced directory. The user decides; the
+questions are asked before the pin is written, not after the first
+missed session.
+
 **A session started without a project folder has no stable project
 identity.** In a desktop app that runs such a session in a per-session
 scratch directory (the tell is `scratch-workspaces/` or
@@ -864,7 +882,10 @@ hook then fails with "permission denied" on every session start with
 nothing surfacing the error. Register the interpreter instead
 (`"command": "bash '/path/to/hooks/…'"`), which does not depend on the exec
 bit, and treat "the Session Start Protocol stopped running" as a prompt to
-check the hook rather than the skill.
+check the hook rather than the skill. The same silent death follows, with
+the mode intact, when the script lives on a drive that is not mounted at
+session start: keep hook scripts on local storage ("Anchoring the
+workspace", "Stable is not the same as always available").
 
 ### Two harness behaviours that block the protocol rather than break it
 
