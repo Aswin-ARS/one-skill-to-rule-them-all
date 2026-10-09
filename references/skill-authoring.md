@@ -220,28 +220,29 @@ Splitting is indicated when the count of distinct load triggers into one
 file grows, whatever its size — each trigger pays for every other
 episode's content — and a long single-episode file is correctly shaped
 and must not be split to satisfy a size rule. One measurement of this
-skill's own bundle (lines / distinct section-named load triggers),
-copied from the validator's `reference shape` line — refresh it from
-that line, never by hand. The validator counts pointers that name a
-section, so a file the core cites only by filename reads n/a:
+skill's own bundle (lines / load triggers declared in each file's
+header), copied from the validator's `reference shape` line — refresh it
+from that line, never by hand:
 
 | file | lines | triggers |
 |---|---:|---:|
-| `weekly-review.md` | 2,133 | 1 |
-| `observation-log.md` | 1,738 | **18** |
-| `environments.md` | 1,725 | 6 |
-| `skill-authoring.md` | 1,427 | n/a |
-| `starter-principles.md` | 480 | n/a |
-| `signals.md` | 232 | 4 |
-| `migration.md` | 226 | n/a |
+| `weekly-review.md` | 1,990 | 3 |
+| `environments.md` | 1,705 | 12 |
+| `observation-log.md` | 1,493 | **20** |
+| `skill-authoring.md` | 1,367 | 7 |
+| `starter-principles.md` | 482 | 1 |
+| `migration.md` | 250 | 1 |
+| `signals.md` | 234 | 6 |
 
 A line ceiling flags the largest file first — the one that needs no
 change, since a review loads it whole as a unit — and cannot tell it
-from the file that eighteen separate moments in a session each pull
-in. So `scripts/validate-skill-bundle.py` prints the
-per-file trigger count on every run, deliberately **not gated**: one
-snapshot cannot site a threshold, and this one already overturned the
-rule that was about to be written; the next review argues from a trend.
+from the file that twenty separate moments in a session each pull
+in. So `scripts/validate-skill-bundle.py` prints the per-file trigger
+count on every run, and gates growth only for a skill that opts in with
+per-file ceilings ("Reference-file ceilings — the growth barrier",
+below): there the declared count picks the remedy for a file that
+outgrows its ceiling, split above 12 triggers, trim or a reasoned raise
+at 12 or fewer.
 When a split is made, it needs a load-observation test per moved episode
 (below), and never two structural splits in one test period — a
 regression could not be attributed to either.

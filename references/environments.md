@@ -1533,7 +1533,9 @@ This skill consists of `SKILL.md`, the reference files it lists
 `scripts/new-observation.sh`, `scripts/session-start-scan.sh`,
 `scripts/skill-load.sh` and `scripts/validate-skill-bundle.py`. If any is
 missing, SKILL.md "Reference files" applies (the rule lives there because
-this file can be the missing one).
+this file can be the missing one). `references/.ceilings` travels with
+them: it holds the per-file line ceilings the validator reads, and a `*`
+glob skips it as a dotfile, so copy the folder.
 
 ## Compaction behaviour
 
