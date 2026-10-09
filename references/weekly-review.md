@@ -278,7 +278,14 @@ Escalate one decision per cluster (Step 3).
 guard: run Step 1's no-observations short-circuit FIRST — if there are no
 OPEN observations and no outstanding principles, skip Step 0 entirely and
 just update the timestamp. A brand-new install must never get a setup
-prompt before it has done any work. Otherwise: check
+prompt before it has done any work. Next, read the activation config
+Step 1 reads (the instruction block in CLAUDE.md or its equivalent):
+where it says where reviews come from (a named routine, a schedule kept
+elsewhere, "only when I ask") or forbids autonomous runs, the user has
+already answered this step's question. Skip the offer, write no decline
+marker (it would record an answer the user never gave), and record the
+reason with the quoted line in `activation-tiers.txt`; offer again only
+when a later review finds that line changed or gone. Otherwise: check
 `skill-observations/scheduled-review-decline.txt`: if under 30 days old and
 the fallback isn't firing repeatedly, skip. Check for a registered
 scheduled task (`skill-observations/scheduler-registered.txt`, or the
@@ -347,7 +354,9 @@ re-suggest the block; record the tiers found in
 `skill-observations/activation-tiers.txt` so the next review has a
 baseline to compare against — in an aggregate run over several logs,
 one such file per participating workspace, describing that workspace's
-own config, never a single copy at the anchor workspace.
+own config, never a single copy at the anchor workspace. The baseline
+includes any review-source line Step 0 quoted: when it has changed or
+gone, say so, and Step 0's offer is due again at the next review.
 
 Two more reads belong to the same pass. **Does the pre-skill tier's line
 name the batch content, or only the probe?** Where a tier read before any
