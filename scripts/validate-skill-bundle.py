@@ -432,6 +432,13 @@ def index_misses(body):
     def norm(s):
         return " ".join(s.split())
 
+    def plain(s):
+        # An entry written as an anchor link, `[Alpha](#alpha)`, is the
+        # other common way to write an index; reading the brackets as text
+        # failed every heading of a correct index, so the link is reduced
+        # to its text before matching.
+        return norm(re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s))
+
     m = re.search(r"(?ms)^## Contents[ \t]*\n(.*?)(?=^## |^### |^-{3,}[ \t]*$|\Z)", body)
     if not m:
         return []             # a file may legitimately have no index
@@ -442,15 +449,17 @@ def index_misses(body):
     # equality reported a correctly-indexed section as missing — the
     # check's own first finding was its own defect.
     entries, cur = [], None
+    # A bullet is `-`, `*` or `+`: all three are Markdown lists, and an
+    # index written with `*` otherwise had no entries at all.
     for line in m.group(1).splitlines():
-        if re.match(r"^\s*-\s+", line):
+        if re.match(r"^\s*[-*+]\s+", line):
             if cur is not None:
-                entries.append(norm(cur))
-            cur = re.sub(r"^\s*-\s+", "", line)
+                entries.append(plain(cur))
+            cur = re.sub(r"^\s*[-*+]\s+", "", line)
         elif cur is not None and line.strip():
             cur += " " + line.strip()
     if cur is not None:
-        entries.append(norm(cur))
+        entries.append(plain(cur))
     # Headings below the index, excluding the index itself
     missing = []
     for h in re.findall(r"(?m)^#{2,3}\s+(.+?)\s*$", body[m.end():]):
@@ -469,6 +478,12 @@ INDEX_FIXTURES = [
      "# T\n\n## Contents\n\n- 1. One\n\n### 1. One\ntext\n\n### 2. Two\ntext\n", ["2. Two"]),
     ("## sections still bound the index",
      "# T\n\n## Contents\n\n- A\n\n## A\n\n### Sub\n", ["Sub"]),
+    ("anchor-link entries match their headings",
+     "# R\n\n## Contents\n\n- [Alpha](#alpha)\n- [Beta two](#beta-two) — what it covers\n\n## Alpha\n\ntext\n\n## Beta two\n\ntext\n", []),
+    ("anchor-link index missing one heading still fails",
+     "# R\n\n## Contents\n\n- [Alpha](#alpha)\n\n## Alpha\n\n## Beta\n", ["Beta"]),
+    ("`*` bullets are entries too",
+     "# R\n\n## Contents\n\n* [Alpha](#alpha)\n* Beta\n\n## Alpha\n\n## Beta\n", []),
 ]
 
 
