@@ -208,9 +208,9 @@ it can be the Microsoft Store alias), use `py -3`.
    agents"). Converting each in place preserves that fork, with two id
    spaces that already collide. Consolidate those onto one anchor first
    — per "Before creating a log, search for one" in
-   `references/environments.md`, leaving a pointer file at each
-   abandoned location — and run this procedure once, on the surviving
-   log. Only genuinely distinct observed scopes migrate separately.
+   `references/environments.md`, leaving a pointer file,
+   `skill-observations/MOVED.md`, at each abandoned root — and run this
+   procedure once, on the surviving log. Only genuinely distinct observed scopes migrate separately.
 
    **Every live `log.md` needs reconciling, including one that sits
    beside an `observation-log/`.** That pair is not a converted

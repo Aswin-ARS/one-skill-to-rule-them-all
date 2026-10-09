@@ -12,9 +12,10 @@
 #                     path may contain spaces.
 #
 # Prints, on stdout, in this order: any NOTE / LOST ENTRIES lines; the counts
-# line (files, parsed, suspect, archive-suspect); a GAP line when the previous
-# scan in checkpoints.log is 7 or more days old; the logs found under the
-# root's parent; the active principles' headings; and LAST the frontmatter
+# line (files, parsed, suspect, archive-suspect); a NOTE: pointer line when
+# skill-observations/MOVED.md exists; a GAP line when the previous scan in
+# checkpoints.log is 7 or more days old; the logs found under the root's
+# parent; the active principles' headings; and LAST the frontmatter
 # of every numbered entry, each header followed by one `---` line. Appends
 # one line to skill-observations/checkpoints.log:
 #   YYYY-MM-DD HH:MM [<cwd's last segment>] session-start scan: files=N parsed=N principles=N
@@ -131,6 +132,18 @@ lost=$( { find "$d" -maxdepth 1 -name '[0-9]*.md' -empty; LC_ALL=C find "$d" -ma
 [ "$parsed" -lt "$n" ] && echo "NOTE: $((n - parsed)) of $n headers did not parse (no opening or no closing ---):" && LC_ALL=C find "$d" -maxdepth 1 -name '[0-9]*.md' -exec awk 'FNR==1 {if (NR>1 && fm) print f; f=FILENAME; sub(/^\357\273\277/, ""); fm=/^---[[:space:]]*$/; if (!fm) {print f; nextfile}; next} fm && /^---[[:space:]]*$/ {fm=0; nextfile} END {if (fm) print f}' {} +
 [ "$suspect" -gt 0 ] || [ "$a_sus" -gt 0 ] && echo "NOTE: $suspect of $n headers (and $a_sus in archive/) look like invalid YAML (an unquoted ': ', text after a closing quote, a value opening with a backtick, @ or %, an undefined escape, a colon in an unquoted list entry) — quote or fix them (File format)"
 printf 'files: %s  parsed: %s  suspect (awk, a floor): %s  archive-suspect: %s\n' "$n" "$parsed" "$suspect" "$a_sus"
+
+# --- pointer: skill-observations/MOVED.md marks a root as abandoned ------------
+# Left by a consolidation or a re-anchor (references/environments.md, "Before
+# creating a log, search for one"). A session still anchored here is the one
+# that has to see it, and nothing else in the protocol lists the root. Data,
+# not an order: report it, with how many entries were written here after it.
+mv_ptr="$root/skill-observations/MOVED.md"
+if [ -f "$mv_ptr" ]; then
+  mv_line=$(head -n 1 "$mv_ptr" | tr -d '\r' | cut -c 1-200)
+  mv_after=$(find "$d" -maxdepth 1 -name '[0-9]*.md' -newer "$mv_ptr" 2>/dev/null | wc -l | tr -d ' ')
+  echo "NOTE: pointer at this root (skill-observations/MOVED.md): \"$mv_line\" — $mv_after entries written here since it; report both roots and ask, never consolidate or re-anchor on it"
+fi
 
 # --- gap: days since the previous session-start scan --------------------------
 # Read before this run's trace line is appended. The previous scan's date is

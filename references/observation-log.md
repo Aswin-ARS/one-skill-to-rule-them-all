@@ -68,6 +68,8 @@ skill-observations/
   reviews/               # one record per review run: reviews/YYYY-MM-DD/REVIEW.md
                          #   (weekly-review.md Step 8; kept, never pruned by a step)
   checkpoints.log        # append-only acknowledgement markers (optional)
+  MOVED.md               # only at an abandoned root: line 1 names the new root
+                         #   (environments.md, "Before creating a log, search for one")
 ```
 
 Each file follows the core frontmatter format (How to Log); the listing

@@ -940,17 +940,19 @@ ROUNDTRIP_FIXTURES = [
 # substring, checkpoint lines written, stdout substring that must be ABSENT).
 # Skipped, not failed, where no bash is on PATH: the scan is a bash script
 # and the gate is not. The "gap" and "recent" scenarios seed checkpoints.log
-# with one earlier scan line, 21 and 2 days old.
+# with one earlier scan line, 21 and 2 days old; "moved" adds a MOVED.md.
 SCAN_SCRIPT = pathlib.Path(__file__).resolve().parent / "session-start-scan.sh"
 SCAN_FIXTURES = [
     ("healthy log scans: counts line, one checkpoint line", "healthy", True, 0,
-     "files: 2  parsed: 2  suspect (awk, a floor): 1", 1, "GAP:"),
+     "files: 2  parsed: 2  suspect (awk, a floor): 1", 1, "NOTE: pointer"),
     ("no header parses: guard halts before the checkpoint", "broken", True, 1,
      "SCAN COMMAND BROKEN", 0, ""),
     ("no workspace root: refused, nothing written", "healthy", False, 2, "", 0, ""),
     ("previous scan 21 days old: GAP line names its date", "gap", True, 0,
      "GAP: the previous session-start scan ran ", 2, ""),
     ("previous scan 2 days old: no GAP line", "recent", True, 0, "files: 2", 2, "GAP:"),
+    ("MOVED.md at the root: NOTE names it and its first line", "moved", True, 0,
+     'NOTE: pointer at this root (skill-observations/MOVED.md): "Moved to /new/root', 1, ""),
 ]
 
 
@@ -975,6 +977,9 @@ def scan_case(scenario, pass_root):
             (log / "0002-b.md").write_text("---\nid: 2\ntitle: Fix: unquoted\n---\n", encoding="utf-8")
         else:
             (log / "0001-a.md").write_text('---\nid: 1\ntitle: "never closed"\n', encoding="utf-8")
+        if scenario == "moved":
+            (root / "skill-observations" / "MOVED.md").write_text(
+                "Moved to /new/root on 2026-10-05\r\n", encoding="utf-8")
         env = {k: v for k, v in os.environ.items() if k != "TASK_OBSERVER_WORKSPACE"}
         args = ["bash", str(SCAN_SCRIPT)] + ([str(root)] if pass_root else [])
         r = subprocess.run(args, cwd=tmp, env=env, capture_output=True, text=True,
