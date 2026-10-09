@@ -662,6 +662,9 @@ def check_dir(skill_dir, fails):
         fails.append(f"description {len(desc)} chars > cap {MAX_DESCRIPTION_CHARS}")
     elif len(desc) > 900:
         print(f"warn: description {len(desc)} chars (cap {MAX_DESCRIPTION_CHARS}) — near the boundary")
+    for ln, tok in template_tokens(text):
+        print(f"warn: SKILL.md:{ln}: {tok!r} is rewritten when the skill is invoked with "
+              f"arguments — write an awk field as `$ 2`, or move the text to a reference or script")
     # Every cited bundled path exists (backticked, real extension — globs in
     # prose are skipped). Ownership is inferred from the shape of the span, so
     # the convention has to make the two cases distinguishable: PATH_RE requires
@@ -735,6 +738,32 @@ def blank_fenced_code(text, fill=lambda h: re.sub(r"[^\n]", " ", h)):
             fence, held = None, []
     out.extend(held)          # unclosed fence: prose
     return "".join(out)
+
+
+# A `$` right before a digit, and `$ARGUMENTS`, are rewritten by Claude
+# Code's skill loader when the skill is invoked with arguments: `$0` becomes
+# the first argument word, `$2` the third. The file on disk is unchanged, so
+# no read of it shows the damage; an awk field reference in SKILL.md then
+# runs as `{st=only,}`, a syntax error the snippet's `2>/dev/null` hides.
+# `$ 2` (awk allows the space) and `${2}` arrive intact. Reported as a
+# warning, never a failure: other skills use `$1` placeholders on purpose,
+# and reference files and scripts are read or run as files, not templated.
+TEMPLATE_TOKEN_RE = re.compile(r"\$(?:[0-9]|ARGUMENTS\b)")
+
+
+def template_tokens(text):
+    """[(line, token)] for every loader-substituted token in a SKILL.md."""
+    return [(text.count("\n", 0, m.start()) + 1, m.group(0))
+            for m in TEMPLATE_TOKEN_RE.finditer(text)]
+
+
+# (name, SKILL.md text, tokens template_tokens must report)
+TEMPLATE_FIXTURES = [
+    ("awk field reference $2 is reported", "    fm && /^status:/ {st=$2}\n", [(1, "$2")]),
+    ("$0 and $ARGUMENTS in prose are reported", "x\nquote $0 and $ARGUMENTS here\n",
+     [(2, "$0"), (2, "$ARGUMENTS")]),
+    ("spaced $ 2, ${2}, $NF and $d pass", "{st=$ 2} ${2} $NF \"$d\"\n", []),
+]
 
 
 def command_paths(text):
@@ -948,6 +977,24 @@ def selftest():
         ok = index_misses(text) == want
         bad += not ok; total += 1
         print(f"{'ok  ' if ok else 'FAIL'} reference index: {name}")
+    for name, text, want in TEMPLATE_FIXTURES:
+        ok = template_tokens(text) == want
+        bad += not ok; total += 1
+        print(f"{'ok  ' if ok else 'FAIL'} template token: {name}")
+    with tempfile.TemporaryDirectory() as td:   # a token warns; it never fails the gate
+        sk = pathlib.Path(td) / "tok"
+        sk.mkdir()
+        (sk / "SKILL.md").write_text('---\nname: tok\ndescription: "D."\n---\nawk \'{print $1}\'\n',
+                                     encoding="utf-8")
+        import contextlib
+        import io
+        fails, buf = [], io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            check_dir(sk, fails)
+        ok = not fails and "warn: SKILL.md:5: '$1'" in buf.getvalue()
+        bad += not ok; total += 1
+        print(f"{'ok  ' if ok else 'FAIL'} template token: warns, does not fail the gate"
+              + ("" if ok else f" (fails {fails})"))
     for name, text, want in COMMAND_PATH_FIXTURES:
         ok = command_paths(text) == want
         bad += not ok; total += 1

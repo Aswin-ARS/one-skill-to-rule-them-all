@@ -846,7 +846,13 @@ re-check exists, do not record the value — record how to obtain it.
    fills a whole backtick span, and also one in command position — after
    an interpreter (`python3`, `bash`, `node`, `uv run` …) inside an inline
    span or a fenced block, with arguments behind it — while a bare path
-   quoted as an example with no interpreter stays unchecked; (2) the delivery artefact
+   quoted as an example with no interpreter stays unchecked. It also warns
+   on every `$` followed by a digit, and on `$ARGUMENTS`, in SKILL.md: a
+   loader that passes skill arguments rewrites them in the delivered body
+   (the file on disk is unchanged), so an awk field reference there is
+   written `$ 2`, and a command that needs `$1` belongs in a script or a
+   reference file; a warning, not a failure, because a placeholder can be
+   intended; (2) the delivery artefact
    is the `.skill` bundle — bare file links fail this gate even when all
    files are staged; (3) frontmatter constraints — measure the description
    (the FOLDED value, not the raw YAML block) and fail the delivery above
