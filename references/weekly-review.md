@@ -99,8 +99,12 @@ alone.
 integration point.** First check whether the logs should coexist at all:
 `references/environments.md` requires one log per observed scope, and
 two logs over the same globally installed skills are the silent fork it
-warns about — consolidate those instead of reviewing them jointly. What
-remains is the legitimate case: logs deliberately kept apart because
+warns about — consolidate those instead of reviewing them jointly. Where
+the logs belong to two agent tools on one machine, check that each tool's
+pre-skill tier (its hook message, its instruction file) states the same
+absolute root, and search each tool's own memory and saved commands for
+a stale one: a pin edited in an instruction file does not reach sessions
+that never load it. What remains is the legitimate case: logs deliberately kept apart because
 observation bodies carry non-portable task context, while the skills
 they observe are installed globally and therefore shared. There, running
 the per-workspace review once per log stages each shared skill several

@@ -353,7 +353,10 @@ the defaults alone reports "not found" for every install that deviated
 from them. Never create a workspace while a hook or config names a
 different root: reconcile first. Every always-loaded instruction file is
 a pin source (a CLAUDE.md and an AGENTS.md forked for another agent tool
-are two): grep each for the workspace root. Two distinct roots are a
+are two): grep each for the workspace root. So is each agent tool's own
+memory and its saved or approved commands: a root persisted there from
+an earlier session keeps being used by every session that does not load
+the instruction file, after the file's pin has changed. Two distinct roots are a
 fork, not a variant: stop and reconcile before writing, and keep the pin
 in one file both tools load. If one exists, adopt it, or
 consolidate deliberately with the user. A fresh
@@ -481,8 +484,8 @@ asking the agent to go and look:
 # SessionStart hook: inject activation + review state as additionalContext.
 d="$OBS_WORKSPACE/skill-observations"      # the pinned absolute path
 open=$(find "$d/observation-log" -maxdepth 1 -name '*.md' -exec grep -l '^status: open$' {} + 2>/dev/null | wc -l | tr -d ' ')
-last=$(cat "$d/last-review-date.txt" 2>/dev/null || echo never)
-msg="Invoke the task-observer skill before the first tool call. Observation files are created only by scripts/new-observation.sh in the skill directory, never by copying a header."
+last=$(tr -d '\r' 2>/dev/null < "$d/last-review-date.txt"); last=${last:-never}   # a CRLF file must not carry \r into the JSON
+msg="Make the first tool call of this session one batched call that both lists the task-observer workspace ($OBS_WORKSPACE) and invokes the task-observer skill; then run its Session Start Protocol. Observation files are created only by scripts/new-observation.sh in the skill directory, never by copying a header."
 if [ "$open" -gt 0 ]; then
   msg="$msg $open open observations; last review: $last."
   cutoff=$(date -d '7 days ago' +%F 2>/dev/null || date -v-7d +%F)   # GNU, then BSD/macOS
@@ -491,8 +494,21 @@ if [ "$open" -gt 0 ]; then
     (*) [ "$(printf '%s\n%s\n' "$last" "$cutoff" | sort | head -1)" = "$last" ] && msg="$msg Offer the review." ;;
   esac
 fi
+msg=$(printf '%s' "$msg" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr -d '\000-\037')   # JSON string: escape \ and ", drop control characters
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$msg"
 ```
+
+The message names the resolved workspace and the whole first batch,
+because it is the one pre-skill text the harness delivers on turn 1
+("The probe rides inside the first batched call", below): a message that
+only says "invoke the skill" leaves the probe to a skill not yet read,
+and a tool whose sessions resolve the root another way (a pin in an
+instruction file only some of its sessions load) keeps writing to its
+own log while the injected count, read from the shared one, looks
+healthy. The path is interpolated into a JSON string, so the last step
+escapes the whole message: a Windows path's backslashes and a `"` in a
+folder name otherwise produce output that does not parse, and a hook
+whose output does not parse injects nothing.
 
 On native Windows, Claude Code runs hook commands through Git Bash, where
 a bare `bash` or `python` can resolve to WSL's `System32\bash.exe` or the
