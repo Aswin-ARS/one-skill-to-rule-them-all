@@ -1015,6 +1015,50 @@ def load_case(skill, absolute):
         return r.returncode, r.stdout, len(ck.read_text(encoding="utf-8").splitlines())
 
 
+# scripts/migrate-log.py, the pre-3.0 log converter: (name, legacy entry's
+# **Skill:** line, overrides for entry 88 or None, exit status, substring the
+# written file 0088-*.md must hold, substring it must NOT hold). The known
+# skills are companion-a and companion-b.
+MIGRATE_SCRIPT = pathlib.Path(__file__).resolve().parent / "migrate-log.py"
+MIGRATE_FIXTURES = [
+    ("override siblings_checked and target_file reach the file", "???",
+     {"_resolves": ["skill-name-unparseable"], "_reason": "t", "skill": ["companion-a"],
+      "siblings_checked": "PLANTED", "target_file": ["PLANTED/T.md"]}, 0,
+     'target_file: ["PLANTED/T.md"]\nsiblings_checked: "PLANTED"', None),
+    ("an override key the file cannot carry stops the run", "companion-a",
+     {"sibling_checked": "typo"}, 2, None, None),
+    ("a string where a list belongs stops the run", "companion-a",
+     {"skill": "companion-a"}, 2, None, None),
+    ("a known skill inside a qualifier is a review flag, not area", "companion-a (also touches companion-b A9)",
+     None, 0, "needs review: skill-in-qualifier", "area:"),
+    ("a plain qualifier is still promoted to area", "companion-a (section 3)",
+     None, 0, 'area: "section 3"', "migration_note"),
+    ("a --known-skills path that is not a directory stops the run", "companion-a",
+     "BAD-SKILLS-DIR", 2, None, None),
+]
+
+
+def migrate_case(skill_line, ov):
+    """Convert a one-entry legacy log; return (status, text of 0088-*.md or None)."""
+    import json
+    import subprocess
+    with tempfile.TemporaryDirectory() as tmp:
+        t = pathlib.Path(tmp)
+        for k in ("companion-a", "companion-b"):
+            (t / "skills" / k).mkdir(parents=True)
+        (t / "log.md").write_text("### Observation 88: T\n**Date:** 2026-05-02\n**Status:** OPEN\n"
+                                  f"**Skill:** {skill_line}\n\n**Issue:** x\n", encoding="utf-8")
+        args = [sys.executable, str(MIGRATE_SCRIPT), "--convert", str(t / "log.md"),
+                "--out", str(t / "out"), "--known-skills",
+                str(t / ("missing" if ov == "BAD-SKILLS-DIR" else "skills"))]
+        if isinstance(ov, dict):
+            (t / "ov.json").write_text(json.dumps({"88": ov}), encoding="utf-8")
+            args += ["--overrides", str(t / "ov.json")]
+        r = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        files = sorted((t / "out").glob("0088-*.md")) if (t / "out").is_dir() else []
+        return r.returncode, files[0].read_text(encoding="utf-8") if files else None
+
+
 def selftest():
     bad = total = 0
     for name, text, must_fail in RESIDUE_FIXTURES:
@@ -1114,6 +1158,16 @@ def selftest():
     elif shutil.which("bash"):
         bad += 1; total += 1
         print(f"FAIL skill-load script: {LOAD_SCRIPT.name} missing beside this file")
+    if MIGRATE_SCRIPT.is_file():
+        for name, skill_line, ov, want_rc, has, lacks in MIGRATE_FIXTURES:
+            rc, text = migrate_case(skill_line, ov)
+            ok = rc == want_rc and (text is None if want_rc else text is not None) \
+                and (has is None or has in (text or "")) and (lacks is None or lacks not in (text or ""))
+            bad += not ok; total += 1
+            print(f"{'ok  ' if ok else 'FAIL'} migrate-log: {name}" + ("" if ok else f" (exit {rc})"))
+    else:
+        bad += 1; total += 1
+        print(f"FAIL migrate-log: {MIGRATE_SCRIPT.name} missing beside this file")
     print(f"selftest: {total - bad}/{total} passed")
     return 1 if bad else 0
 
