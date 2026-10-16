@@ -31,9 +31,14 @@ materially changed, or existing installs never see the change.
 
 **The offer is one line, made once:** "the bundle ships N starter
 principles; M are not covered by your file — want to see them?" On yes,
-show only the uncovered ones and let the adopter pick. Either way,
-write the shipped version into the marker file afterwards, so the offer
-never repeats until the set changes. **Never pre-populate silently:** the
+show only the uncovered ones and let the adopter pick. **The marker
+records an answer, not an offer:** write the shipped version into the
+marker file only after an explicit choice — seed all, seed some, or
+start empty — so the offer never repeats until the set changes. A reply
+that does not address the offer is not a choice: leave the marker absent
+so the offer returns next session. Ask it as its own question, never as
+the last line of another task's report, where it goes unread and the
+next reply approves that report instead. **Never pre-populate silently:** the
 live file's authority comes from the adopter's own evidence trail, and
 unexamined imported rules contradict the pruning principle the file itself
 carries (entry 11).

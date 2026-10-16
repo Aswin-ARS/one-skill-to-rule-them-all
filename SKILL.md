@@ -135,11 +135,11 @@ skill" (some upload paths keep only `SKILL.md`); its episodes do not run.
    `references/starter-principles.md` — a fresh install, an upgrade to a
    bundle that ships the file, and every later growth of the set. Load that
    file and follow its **Reconciliation** section: match by substance,
-   offer once in one line, import only what the adopter picks, then write
-   the shipped version into the marker file so the offer never repeats
-   until the set changes. Never pre-populate silently. Name the loaded
-   skill's frontmatter `version:` in the start-up lines — read from the
-   file, never fetched — and list the skill's own directory with its
+   offer once in one line, import only what the adopter picks, then — once
+   answered — write the shipped version into the marker file so the offer
+   never repeats until the set changes. Never pre-populate silently. Name
+   the loaded skill's frontmatter `version:` in the start-up lines — read
+   from the file, never fetched — and list the skill's own directory with its
    `references/` and `scripts/`: a file the core names that is absent is
    reported in the same lines ("Reference files"), not at its first load.
 2. **Scan.** Read only the frontmatter of each file in `observation-log/`
