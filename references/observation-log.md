@@ -33,7 +33,7 @@ empty.
   - A refused snippet is a degraded path, never a skipped step
 - Skill families and the sibling check
 - Assigning an id
-  - Shell portability — a `case` pattern inside `$( )` is parenthesised
+  - Shell portability — bash 3.2: the `case` pattern inside `$( )` and the empty array under `set -u`
   - The guard line, the sweep's count and the noclobber create
   - Run the snippet immediately before every write
   - Resolve each id at its own write time
@@ -983,19 +983,26 @@ by the log. Treat a scan that does not return as a broken instrument, never as
 a slow one to wait on — the BROKEN guard cannot fire for a command that
 never finished.
 
-### Shell portability — a `case` pattern inside `$( )` is parenthesised
+### Shell portability — bash 3.2: the `case` pattern inside `$( )` and the empty array under `set -u`
 
 A `case` pattern inside `$( )` is written `(pattern)`, not `pattern)`:
 bash 3.2 (`/bin/bash` on stock macOS) ends the substitution at the
 unbalanced `)`, the block fails at parse time with `syntax error near
-unexpected token ';;'`, and no guard inside it can fire — a guard cannot
-report a failure that happens before it exists. The parenthesised form is
-valid in every POSIX shell and bash version; the scripts keep it.
+unexpected token ';;'`, and no guard inside it can fire. The parenthesised
+form is valid in every POSIX shell and bash version; the scripts keep it.
 
 **If you are porting the snippet or writing a new one:** run it once under
 `/bin/bash` on macOS, not only under the shell your session happens to have.
-`bash -n <file>` is enough — it parses without executing, so it is safe to
-run against a snippet that would otherwise write to the log.
+`bash -n <file>` proves parsing only (safe against a snippet that would
+write to the log); a `set -u` script on bash 3.2 also dies at run time on
+`"${arr[@]}"` of an EMPTY array, which bash 4.4+ passes silently, and it
+dies on the success path — the empty "conflicts" list a green run reports
+unattended. So write every possibly-empty expansion as
+`${arr[@]+"${arr[@]}"}`, wrap a command that must not receive zero
+arguments in `[ ${#arr[@]} -gt 0 ]` (`git reset -q HEAD --` with no paths
+resets everything), and dry-run the empty-array path before the populated
+one. The shipped scripts use no arrays; the rule binds snippets written
+against this skill's guidance.
 
 ### The guard line, the sweep's count and the noclobber create
 
