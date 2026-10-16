@@ -298,7 +298,8 @@ scheduled task (`skill-observations/scheduler-registered.txt`, or the
 platform's scheduler queried directly: `crontab -l` on Unix; `launchctl
 list` on macOS where launchd is used; `Get-ScheduledTask` in PowerShell
 or `schtasks /Query` from any Windows shell; the app's Scheduled tasks
-page in Cowork); if found, check that it covers **this** workspace before
+page in Cowork; the harness's own scheduled-task listing tool, where the
+tool surface has one); if found, check that it covers **this** workspace before
 skipping: compare the workspace the task was registered for (recorded in
 `scheduler-registered.txt`, or read from the task definition) with the
 `[workspace folder]` this session resolved. Same path → check its last
@@ -313,12 +314,11 @@ for this one; it is the fork reporting itself healthy. Say so in one line,
 naming both paths and this log's open count, and route to "Several
 observation logs on one machine": logs over the same globally installed
 skills are a fork to consolidate, not a second queue to schedule.
-"No scheduler available" means the
-platform's own scheduler was queried and is absent — cron missing on
-Windows is not that; Task Scheduler is the scheduler there, and a check
-worded around cron alone marks every Windows install as schedulerless
-and silently never offers the review. Before
-offering, check reachability (see the regimes above): if the platform's
+"No scheduler available" means the platform's own scheduler was queried
+and is absent — cron missing on Windows is not that; Task Scheduler is
+the scheduler there, and a check worded around cron alone marks every
+Windows install as schedulerless and silently never offers the review.
+Before offering, check reachability (see the regimes above): if the platform's
 scheduler runs where it cannot reach the workspace folder (regime 2), do
 NOT offer registration — recommend the calendar-reminder-plus-manual-
 trigger pattern instead, and skip the rest of this step. Otherwise

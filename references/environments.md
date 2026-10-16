@@ -1299,15 +1299,13 @@ an install (`weekly-review.md`, Step 1 gate). Hash the installed scripts on
 your side and run the `.bin/` copy only when every digest matches the
 manifest. Absent or mismatched, look for another copy in the workspace — a
 staged copy under `skill-updates/*/task-observer/scripts/` — and compare its
-digest (`md5sum` or
-`sha256sum`, run on both sides) with the installed scripts BEFORE running
-it, and run it only on a match: a staged copy can be an unreleased version
-that nothing refreshes on install. With no matching copy, transfer the
-scripts to the device — a permission-classifier denial of that transfer
-gets at most one identical retry, told to the user (SKILL.md, How to Log)
-— or run the inline id snippet through the device shell. Never a
-hand-derived id. The failure shape: a writer that cannot reach the helper
-improvises the id, and the `.id-floor` lags until the next review finds it.
+digest (`md5sum` or `sha256sum`, run on both sides) with the installed
+scripts BEFORE running it, and run it only on a match: a staged copy can
+be an unreleased version that nothing refreshes on install. With no
+matching copy, transfer the scripts to the device — a
+permission-classifier denial of that transfer gets at most one identical
+retry, told to the user (SKILL.md, How to Log) — or run the inline id
+snippet through the device shell. Never a hand-derived id.
 
 | Capability | Claude Cowork | Claude Code | Web chat / no filesystem |
 |---|---|---|---|
@@ -1317,6 +1315,16 @@ improvises the id, and the `.id-floor` lags until the next review finds it.
 | Scheduled review | the app's scheduled tasks (cloud-default: run remotely; legacy local mode: run on the user's machine, only while it is on — see the execution-mode note above) | cron / a harness `SessionStart` hook / an account-level scheduler that can reach the workspace — headless invocations carry the workspace grant (`--add-dir`) in the task definition | calendar reminder + manual trigger |
 | Session-start hook | none | `SessionStart` hook (`hookSpecificOutput.additionalContext`) | none |
 | Local-vs-cloud tell | `allow_cowork_file_delete` present ⇒ local session | n/a | n/a |
+
+**The Claude Code column is the terminal CLI; the desktop app has a
+scheduler of its own.** Claude Code run inside the desktop app exposes
+the app's scheduled-task tools on its tool surface, and a review
+registered there is local: it runs on the user's machine while the app
+is open and catches up at the next launch (reported, not yet confirmed
+here). Register it as any local scheduler: the workspace grant goes into
+the task definition, and the first "Run now" of the task itself is the
+grant check (the access-grant paragraph below). The tell is a
+scheduled-task tool on the tool surface; absent, the CLI column applies.
 
 Grow the table when a new environment appears; do not scatter its tool
 names through the procedure files.
