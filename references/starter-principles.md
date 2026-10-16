@@ -31,8 +31,16 @@ materially changed, or existing installs never see the change.
 
 **The offer is one line, made once:** "the bundle ships N starter
 principles; M are not covered by your file — want to see them?" On yes,
-show only the uncovered ones and let the adopter pick. **The marker
-records an answer, not an offer:** write the shipped version into the
+show only the uncovered ones and let the adopter pick. **A
+recommendation that names an entry as evidence is a citation:** read
+the cited bodies in full first, never titles, and say which artefact
+motivated each entry you recommend, as the fresh-install pass below
+does; an entry you have not read is listed, not recommended. A title
+says what an entry is about, not what it shows, and the adopter chooses
+on the evidence given here, one step before the import's "Fits:" line
+would have checked it — a recommendation drafted from titles has cited
+entries about something else, and only the import caught it. **The
+marker records an answer, not an offer:** write the shipped version into the
 marker file only after an explicit choice — seed all, seed some, or
 start empty — so the offer never repeats until the set changes. A reply
 that does not address the offer is not a choice: leave the marker absent
