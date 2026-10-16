@@ -1439,7 +1439,9 @@ converted (see `migration.md`) and are not scanned.
 
 ## Referencing observations
 
-Rules: core, Referencing Observations.
+Rules: core, Referencing Observations. In chat, every surfaced id reads
+`observation NNNN` — in a review offer, a checkpoint summary, a status
+line — never a bare number, which the user cannot tell from a count.
 
 **Cite the id where the fix lands.** A commit message or code comment that
 applies an observation names its id (`observation #<id>`, qualified by
@@ -1489,9 +1491,6 @@ the exception under "How to Log" — fold this line into the session's first
 write instead.)
 
 ### Two gaps the checkpoint pairing still leaves — and the rule behind both
-
-**Two gaps this pairing still leaves — both observed across full working days
-in which nothing was logged at all.**
 
 1. *A session can contain no todo items.* The 3rd-completion checkpoint is
    bound to one tool (core). When

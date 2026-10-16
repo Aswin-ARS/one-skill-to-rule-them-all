@@ -178,19 +178,19 @@ skill" (some upload paths keep only `SKILL.md`); its episodes do not run.
    registered scheduler reporting a later last run, is a run that completed
    no review: say "fired YYYY-MM-DD, no review recorded" and treat the
    review as due. If the value is `never` or 7 or more days old AND there
-   are OPEN observations: in an interactive session, offer the review in
-   one line and proceed with the user's task unless they opt in; never gate
-   their work on the review. Scale the offer's CONTENT with the backlog,
-   never its frequency: up to ~15 open observations, offer the full review
-   ("the backlog hasn't been reviewed [in N days / yet] — N open; run it
-   now, or carry on?"); above that, offer a bounded slice whose unit of
-   work stays constant as the backlog grows — "review the 10 oldest",
-   "review just the ones targeting <the skill most named>" — and state both
-   numbers, how many are open and roughly how many distinct findings they
-   represent (cluster on the `title` and `skill` fields you just scanned;
-   why: `references/weekly-review.md`). Only a scheduled/autonomous run
-   loads `references/weekly-review.md` and runs the review unprompted; a
-   session whose output a caller owns does neither: `references/environments.md`
+   are OPEN observations: in an interactive session, offer the review in one
+   line, once per session, and proceed with the user's task unless they opt in;
+   never gate their work on the review. Scale the offer's CONTENT with the
+   backlog, never its frequency: up to ~15 open observations, offer the full
+   review ("the backlog hasn't been reviewed [in N days / yet] — N open; run it
+   now, or carry on?"); above that, offer a bounded slice whose unit of work
+   stays constant as the backlog grows — "review the 10 oldest", "review just
+   the ones targeting <the skill most named>" — and state both numbers, how
+   many are open and roughly how many distinct findings they represent (cluster
+   on the `title` and `skill` fields you just scanned; why:
+   `references/weekly-review.md`). Only a scheduled/autonomous run loads
+   `references/weekly-review.md` and runs the review unprompted; a session
+   whose output a caller owns does neither: `references/environments.md`
    ("Sessions whose output channel is owned by a caller").
 4. **Activation.** Once per session: if no CLAUDE.md (or equivalent)
    activation instruction for this skill exists, suggest adding one (see
@@ -515,10 +515,10 @@ frontmatter fields you are changing (`status`, `parked_until`, `resolved`,
 ## Referencing Observations
 
 Cite an observation by the `id` field in its frontmatter (= the `NNNN-`
-filename prefix), never a `grep -n` line number — those are positional
-metadata, not identifiers. A cited id must fall inside the range across
-`observation-log/`, `archive/` and `.id-floor`; one far outside it is
-almost certainly a line number misread as an id.
+filename prefix), never a `grep -n` line number, which is positional metadata;
+in chat write every surfaced id as `observation NNNN`, never a bare number. An
+id must fall inside the range across `observation-log/`, `archive/` and
+`.id-floor`; one far outside it is a line number misread as an id.
 
 ## Taxonomy (quick version)
 
