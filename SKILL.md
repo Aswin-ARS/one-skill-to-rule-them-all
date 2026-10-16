@@ -164,8 +164,8 @@ skill" (some upload paths keep only `SKILL.md`); its episodes do not run.
    bash "<skill directory>/scripts/session-start-scan.sh" "[ABSOLUTE PATH]"
    ```
 
-   `scripts/session-start-scan.sh` is the scan (`<skill directory>`: the one
-   holding this file); review what it runs and prints there, line by line.
+   `scripts/session-start-scan.sh` is the scan (in `<skill directory>`); review
+   it there, and read its output whole — never through `tail`, `head` or `grep`.
 
    **Only the print can be refused, so it runs last** — a refused print is
    never an empty log: load `references/observation-log.md` ("A refused

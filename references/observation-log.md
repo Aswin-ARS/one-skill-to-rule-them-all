@@ -1488,7 +1488,12 @@ line is the protocol's own trace, for the same reason the checkpoint rule
 is a write: a step whose value lies in happening at a specific moment needs
 its own entry in the tool record. (Where the workspace prices every write —
 the exception under "How to Log" — fold this line into the session's first
-write instead.)
+write instead.) Read the scan's output whole. Its finding lines (NOTE,
+LOST ENTRIES, GAP) and counts come first and the entry headers last, with
+one `end of scan` line closing it that repeats the counts and the number
+of finding lines; `tail`, `head` or a `grep` hides exactly the lines that
+matter while the checkpoint line still lands and the log looks
+compliant. A truncated scan is a skipped one.
 
 ### Two gaps the checkpoint pairing still leaves — and the rule behind both
 
