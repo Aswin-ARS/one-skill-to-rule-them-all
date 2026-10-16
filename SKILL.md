@@ -468,8 +468,8 @@ parked_until:           # MANDATORY when status is parked, empty otherwise:
 resolved:               # date resolved; leave empty while OPEN
 resolution:             # what was done — set only when actioned/declined/superseded
 reference:              # optional — path to saved session-local evidence
-commands_verified:      # MANDATORY when the body quotes a command — each
-                        #   `run` with its result, or `NOT RUN` with why; else none
+commands_verified:      # MANDATORY when the body quotes a command or predicate —
+                        #   each `run` with its result, or `NOT RUN` with why; else none
 ---
 
 **Issue:** [What happened — specific enough to understand weeks later
