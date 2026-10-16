@@ -1049,6 +1049,11 @@ whatever state the original session happened to be looking at. Where the
 system is unreachable at review time, promote the claim **with its
 provenance** ("observed on N documents, all in `approved` status") rather
 than as a fact, so the next reader knows what would have to be re-checked.
+The provenance has two forms, by skill class: an internal skill carries
+the date and the count; a published skill carries scope without a date and
+without per-project counts ("observed on one tracker at last
+verification"), because a dated first-party claim is forbidden there
+(`references/skill-authoring.md`, Timelessness).
 The cost is one query; the alternative is a rule that is wrong in exactly
 the cases nobody sampled.
 A command the entry quotes is a claim of this kind; its `commands_verified:`
@@ -1436,7 +1441,11 @@ for observation interdependencies (which observation supersedes, refines,
 or folds into which — the parent must state this per cluster explicitly,
 or subagents applying observations sequentially produce patch-on-patch
 instead of coherent final state), the confidentiality rules for
-open-source skills, the instruction to read `references/skill-authoring.md`
+open-source skills and the provenance form per skill class — an internal
+skill's promoted claim carries its date, a published skill's carries scope
+without a date or per-project count ("observed on one tracker at last
+verification"), stated in the brief so no delegate resolves the pair
+differently — the instruction to read `references/skill-authoring.md`
 in its own context before its first write to a skill file (the parent's
 load does not carry over), the rule **never introduce `: ` into an unquoted
 frontmatter value** (a subagent extending a `description:` is the
