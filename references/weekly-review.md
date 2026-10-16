@@ -1509,7 +1509,17 @@ recovered by reading the file, not by resuming the agent. After an
 interruption, re-list the staged tree against the pre-dispatch snapshot
 before dispatching anything again, and treat an unexplained change as a
 prior run of that cluster, never as clean seed. Where the harness offers
-per-agent sandboxes or worktrees, parallel writers use them. **A phase that will write is briefed as a write phase from the
+per-agent sandboxes or worktrees, parallel writers use them and the
+parent merges the worktrees after the returns. When writers share one
+tree (an install that stages repository-held skills as one branch in one
+worktree has no other staging), each worker's verification is scoped to
+its own paths — `git diff --stat -- <own files>`, or a listing of its own
+directory — and any other path it sees changed is reported as
+information, not failure; the parent runs the whole-tree check once,
+after the returns, as part of the merge-time pass (item 3 below). A
+verification step handed to parallel workers must be one each worker can
+pass alone: a check over a shared artefact fails for every worker but the
+last. **A phase that will write is briefed as a write phase from the
 start**, with the user's authorisation for the writes quoted verbatim in
 the brief — one brief covering triage and apply, or a fresh subagent for
 the apply phase — never a read-only brief later widened by a message from
@@ -1522,10 +1532,9 @@ before fanning out, and quote it in every brief. The
 parent runs `scripts/validate-skill-bundle.py` on EVERY staged skill
 BEFORE any status bookkeeping — a subagent's "done" is a claim about its
 own edits, and the validator is the one check that sees the file the
-edits produced; run after the bookkeeping, a failure means unwinding
-`actioned` marks. The principle: the apply-phase is embarrassingly parallel across
-skills but the bookkeeping must have one owner — split the work along
-that seam.
+edits produced. The principle: the apply-phase is embarrassingly parallel
+across skills but the bookkeeping must have one owner — split the work
+along that seam.
 
 **A delegated adversarial review needs the unchanged files its central
 claim depends on.** When a fix is sent to a second agent for review, the
