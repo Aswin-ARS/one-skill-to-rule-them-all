@@ -579,7 +579,12 @@ act that happens outside any session, so no session observes it and
 nothing fires at install time: a ledger whose removal trigger is an event
 no session observes only ever grows. Bind the cleanup to the moment the
 ledger is read — reading is the only reliably recurring event, so the
-reading session owns it. First hold the tree against the manifest,
+reading session owns it. The same gate answers a forwarded line: before
+treating a pasted summary line about staged, pending or installed state
+as a task, run the re-check the line carries (Delivery, "A message
+drafted ahead of a delayed send"), or this gate, first — the state it
+names was measured in another session and has had every session since
+to change. First hold the tree against the manifest,
 every time: list the top-level entries of `skill-updates/` (everything
 but `PENDING.md`) and report, in one line, every entry no manifest
 entry names — "N staging directories without a manifest entry: …".
@@ -1774,20 +1779,29 @@ an event that cannot occur turns the run's one deliverable into a hang.
 
 ## Delivering updated skills
 
-**A message drafted ahead of a delayed send states status that has since
-changed.** Where a delivery message, commit body or summary is composed now
-and sent later — a run gated behind a waiting period, an automated send, a
-queued handover — its *measured* values are usually filled in correctly at
-send time from live output. The prose is not. A paragraph written at draft
-time naming what some other branch or commit still needs will be sent
-verbatim, and it reads with exactly the authority of the measured figures
-beside it.
+**A message drafted ahead of a delayed send, or read after one, states
+status that has since changed.** Where a delivery message, commit body or
+summary is composed now and read later — a run gated behind a waiting
+period, an automated send, a queued handover, or a session-end summary
+the user reads hours on or pastes into another session — its *measured*
+values are usually filled in correctly at send time from live output.
+The prose is not: it goes out verbatim, with exactly the authority of the
+measured figures beside it.
 
-So in anything drafted for later sending: **state only what is measured at
-send time, or nothing.** Claims about the state of other branches, commits,
-tickets or sessions either come from a value the run computes as it sends,
-or come out. A sentence that was true when written is not a safe default —
-it is the one part of the message nothing re-checks.
+So in anything drafted for later sending or reading: **state only what is
+measured at send time, or nothing.** Claims about the state of other
+branches, commits, tickets or sessions either come from a value the run
+computes as it sends, or come out. A sentence that was true when written
+is not a safe default — it is the one part of the message nothing
+re-checks. A claim about state other sessions or the user can change —
+an update staged and not installed, a PR open, a run pending — states
+when it was measured and the one command that re-checks it ("as of
+15:19, `PENDING.md` lists the batch as not installed; re-check: `cat
+<workspace>/skill-updates/PENDING.md`"); a claim that cannot carry both
+comes out. The delay can sit in the reading rather than the sending: a
+closing line that was true at 15:19 reads as current when it is pasted
+into a new session an hour later, and that session spends its first
+calls disproving it while a real defect waits under the stale line.
 
 Stage and present each updated skill per `references/skill-authoring.md`,
 editing rule 5 — the full directory, packed into a `.skill` bundle,
