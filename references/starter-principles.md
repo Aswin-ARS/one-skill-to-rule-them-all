@@ -2,7 +2,7 @@
 
 Load triggers: the starter-set reconciliation is due (marker absent or older than this file's set)
 
-Starter set version: 3
+Starter set version: 4
 
 This file is NOT the adopter's principles file. It is an optional seed:
 a curated set of generic methodology principles, accumulated over a long
@@ -136,7 +136,7 @@ prevent.
 - 20. Skills contain only behaviour-changing content
 - 21. Use agent-agnostic language in open-source skills
 - 22. Verifying current vendor guidance requires a dated changelog check, not just the docs page
-- 23. Never aggregate across structurally different segments
+- 23. Never aggregate across structurally different segments, or against an unmeasured baseline
 - 24. Fetch the instance before describing it
 - 25. One verified reason beats two, where the second is unchecked
 - 26. A companion skill must declare its coverage boundary
@@ -369,10 +369,11 @@ documentation needs a second channel (changelog, raw fetch, or browser)
 before delivery — channel staleness is the first hypothesis, not vendor
 absence.
 
-### 23. Never aggregate across structurally different segments
+### 23. Never aggregate across structurally different segments, or against an unmeasured baseline
 **Applies to:** all skills that report a metric summed, averaged, or ranked
 over more than one segment (market, brand, client, instrument, template,
-channel, time bucket)
+channel, time bucket), and all skills that attribute a failing check to a
+change
 **Requirement:** Before aggregating, check whether the segments are
 structurally comparable — same instrument, same population size, same
 denominator behaviour. If not, report per segment first, and aggregate
@@ -381,7 +382,15 @@ not a neutral default. The diagnostic: an aggregate over heterogeneous
 segments always flatters one segment and buries another, **and the buried
 one is usually the finding** — so when an aggregate produces a "weakness",
 check whether a small segment is being drowned by a large one before
-reporting it.
+reporting it. The same error across time: a check that fails after a
+change is attributed to the change only once the baseline is measured.
+Run the check on the untouched state first — the base commit, the file
+before the edit, the harness's own command on the unmodified tree — and
+compare the two runs; a failure already present at the baseline is
+inherited, and is reported as such, not fixed as if the change had
+introduced it. "Before" and "after" are two segments, and a comparison
+in which one of them was assumed green rather than measured is an
+aggregate over a segment nobody looked at.
 
 ### 24. Fetch the instance before describing it
 **Applies to:** all skills that describe, classify, or verify a specific
