@@ -379,6 +379,21 @@ the concept, list the layers it can live in (docs, code, tests, config),
 and give the search in at least two grammars. If every hit is the same
 file type, the search covered a grammar, not the concept.
 
+**An observation about a recurring act names the check that catches a
+violation, at first logging.** A retrieved observation supplies
+knowledge, not compliance: its body is read when the skill loads, and the
+act it describes happens many tool calls later, where nothing re-reads
+it. So where the Issue is an act a session repeats — a write, a send, a
+status edit, a call made without its precondition — the Suggested
+improvement names the check that would have caught this instance (a grep
+over the artefact, a validator line, a hook condition, one count held
+against another), where it runs, and what it prints on a violation; the
+check is then run on this instance like any other predicate and recorded
+in `commands_verified:`. An entry that names no check proposes a
+sentence, and the second-violation rule (core) reaches it only after the
+next failure; a check named now makes that escalation a promotion of
+something already written and tested, not a design started from scratch.
+
 ## Scanning cheaply
 
 Read only the frontmatter — the header block between the first two `---`

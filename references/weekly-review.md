@@ -878,6 +878,14 @@ entries target the same member. Then, before anything is presented:
   verify it. Keep a workaround instruction only while it is needed, and
   identify the fix that will let a later review remove it. Implementing
   that fix still follows the user's scope and the approval policy.
+- **An entry about a recurring act names its check.** Where the Issue is
+  an act a session repeats, confirm the Suggested improvement names the
+  check that catches a violation (`observation-log.md`, "Commands inside
+  an observation") and that the staged change carries it: a rule applied
+  as prose alone is knowledge the next session may or may not hold at the
+  moment of the act. An entry with no check is not declined for it —
+  name one here, run it on the entry's instance, record the run, or route
+  the entry to the instrument that can run it.
 
 - **Consolidate new-skill candidates by the problem they solve, not by
   name.** Independently logged proposals for the same skill will not look
