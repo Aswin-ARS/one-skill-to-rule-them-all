@@ -846,15 +846,19 @@ re-check exists, do not record the value — record how to obtain it.
    has its file in the staged set — a path qualified with an owning skill
    name (`<skill-name>/references/<file>`) is a cross-reference, exempt by
    construction, and that is the convention for citing another skill's
-   file (weekly-review.md, Delivery). The validator extracts a path that
+   file; a file in the repository the skill operates on is cited
+   repository-relative (`./scripts/<file>`), exempt the same way in prose
+   and in command position — the convention for that case, not the
+   disguise the gate forbids (both: weekly-review.md, Delivery); the
+   skill's own files keep the bare prefix, since either spelling would
+   pass one that is missing. The validator extracts a path that
    fills a whole backtick span, and also one in command position — after
    an interpreter (`python3`, `py`, `bash`, `node`, `uv run` …) inside an
    inline span or a fenced block, with arguments behind it — while a bare
    path quoted as an example with no interpreter stays unchecked. For the
    Python and shell families the interpreter's own options are skipped
-   first (`py -3`, `python3 -X utf8`, `python -u`, `bash -eu`,
-   `bash -o pipefail`), and `-m` or `-c` means no script follows, so
-   `python3 -m pytest scripts/t.py` is not checked. It also warns
+   first (`py -3`, `bash -eu`), and `-m` or `-c` means no script follows,
+   so `python3 -m pytest scripts/t.py` is not checked. It also warns
    on every `$` followed by a digit, and on `$ARGUMENTS`, in SKILL.md: a
    loader that passes skill arguments rewrites them in the delivered body
    (the file on disk is unchanged), so an awk field reference there is

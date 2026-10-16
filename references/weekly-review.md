@@ -1821,9 +1821,11 @@ Pre-delivery gate (run as the last step
 before presenting; the authoring detail for items 1–5 is in
 `references/skill-authoring.md`, editing rule 5): (1) every UNQUALIFIED
 `references/`, `scripts/`, `assets/` path in the staged SKILL.md body has
-its file in the staged set — re-wording a genuine cross-reference
-until the backtick no longer starts with the prefix is disguising a
-reference to satisfy a linter, not fixing a defect; (2) the artefact presented is the
+its file in the staged set — another skill's file is cited as
+`<skill-name>/<path>`, a file in the repository the skill operates on as
+`./<path>`, both exempt and neither a disguise; re-wording a genuine
+cross-reference until the backtick no longer starts with the prefix is
+disguising a reference to satisfy a linter, not fixing a defect; (2) the artefact presented is the
 bundle — bare file links fail this gate — and every staged bundle is
 presented (Step 8's staged/presented count); the number of cards is never
 a reason to present fewer, since one call carries them all and each card

@@ -860,16 +860,24 @@ def check_dir(skill_dir, fails):
     # the reserved prefix IMMEDIATELY after the backtick, which means a path
     # qualified with its owning skill's name — `<skill-name>/references/x.md` —
     # does not match and is exempt by construction. That qualified form is how a
-    # skill cites a file belonging to a different skill; re-wording a legitimate
-    # cross-reference so the backtick no longer starts with the prefix is not.
-    # The failure message names the convention, because a false FAIL here is
+    # skill cites a file belonging to a different skill. A skill that operates
+    # on a repository names that repository's `scripts/` files too, in prose and
+    # in run commands; the convention for those is the repository-relative
+    # form, `./scripts/x.py`, exempt the same way (the `./` is not the prefix),
+    # in prose and in command position alike. Both forms are conventions, not
+    # disguises: re-wording a legitimate cross-reference so the backtick no
+    # longer starts with the prefix is. Either form also passes a skill's OWN
+    # missing file spelt that way — the same trade-off, accepted for both.
+    # The failure message names both conventions, because a false FAIL here is
     # otherwise indistinguishable from a genuinely missing file.
     for rel in sorted(set(PATH_RE.findall(text)) | command_paths(text)):
         if not (skill_dir / rel).is_file():
             fails.append(
                 f"cited path missing from staged set: {rel} "
                 f"— if this file belongs to another skill, cite it as "
-                f"`<skill-name>/{rel}`, which this check exempts")
+                f"`<skill-name>/{rel}`; if it is a file in the repository the "
+                f"skill operates on, cite it as `./{rel}`; both forms are "
+                f"exempt from this check")
     # exactly one frontmatter block: a second `---` block (or stray
     # name:/description: lines) directly after the first is a duplicated
     # header that every field check passes by construction
@@ -1082,6 +1090,7 @@ COMMAND_PATH_FIXTURES = [
     ("uv run", "`uv run scripts/a.py`\n", {"scripts/a.py"}),
     ("quoted example with no interpreter is skipped", "e.g. `scripts/x/generate.py --logo l.png`\n", set()),
     ("qualified path is skipped", "`python3 other-skill/scripts/a.py`\n", set()),
+    ("repository-relative ./ path is skipped", "`python3 ./scripts/report.py --check`\n", set()),
     ("path outside code is skipped", "python3 scripts/a.py in prose\n", set()),
     ("py launcher", "`py scripts/a.py`\n", {"scripts/a.py"}),
     ("py -3 version selector", "`py -3 scripts/a.py --x`\n", {"scripts/a.py"}),
@@ -1097,6 +1106,25 @@ COMMAND_PATH_FIXTURES = [
     ("python3 -m pytest stays unchecked", "`python3 -m pytest scripts/test_x.py`\n", set()),
     ("bash -c stays unchecked", "`bash -c scripts/a.sh`\n", set()),
     ("npm run with -- stays unchecked", "`npm run build -- --out assets/out.png`\n", set()),
+]
+
+
+# The cited-path check end to end, over a minimal staged skill with no
+# scripts/: (name, SKILL.md body, substring every failure must carry, or None
+# when the body must pass). The `./` and `<skill-name>/` spellings are the two
+# exemptions the failure message names.
+CITED_PATH_FIXTURES = [
+    ("unqualified prose path fails, naming both conventions",
+     "The `scripts/report.py` vs `pkg/` collision fails partial runs.\n",
+     "cite it as `./scripts/report.py`; both forms are exempt"),
+    ("unqualified command path fails the same way",
+     "Run `python3 scripts/report.py --check` first.\n", "cite it as `./scripts/report.py`"),
+    ("repository-relative prose path passes",
+     "The `./scripts/report.py` vs `pkg/` collision fails partial runs.\n", None),
+    ("repository-relative command path passes",
+     "Run `python3 ./scripts/report.py --check` first.\n", None),
+    ("another skill's qualified path passes",
+     "See `other-skill/references/x.md`.\n", None),
 ]
 
 
@@ -1373,6 +1401,22 @@ def selftest():
         ok = command_paths(text) == want
         bad += not ok; total += 1
         print(f"{'ok  ' if ok else 'FAIL'} command path: {name}")
+    for name, body, want in CITED_PATH_FIXTURES:
+        with tempfile.TemporaryDirectory() as td:
+            sk = pathlib.Path(td) / "cp"
+            sk.mkdir()
+            (sk / "SKILL.md").write_text('---\nname: cp\ndescription: "D."\n---\n' + body,
+                                         encoding="utf-8")
+            import contextlib
+            import io
+            fails = []
+            with contextlib.redirect_stdout(io.StringIO()):
+                check_dir(sk, fails)
+        cited = [f for f in fails if f.startswith("cited path missing")]
+        ok = (not fails) if want is None else (len(cited) == 1 and want in cited[0])
+        bad += not ok; total += 1
+        print(f"{'ok  ' if ok else 'FAIL'} cited path: {name}"
+              + ("" if ok else f" (fails {fails})"))
     for name, after_pack, must_fail in ROUNDTRIP_FIXTURES:
         ok = roundtrip_case(after_pack) == must_fail
         bad += not ok; total += 1
