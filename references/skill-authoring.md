@@ -1255,9 +1255,8 @@ caught only by a test built to break it.
 ## Runtime prerequisites — declare what the skill needs to be able to run
 
 A skill that drives something outside itself — a CLI binary, a daemon, an
-API key, a container runtime — is only as installed as the thing it drives.
-Presence in the skill listing says the files are there. It says nothing
-about whether invoking them can work.
+API key, a container runtime — is only as installed as the thing it
+drives: the listing says the files are there, not that they can run.
 
 The failure this produces is specific and expensive: the agent reads a
 full, confident description, selects the skill for the task it names, and
@@ -1270,29 +1269,30 @@ obeyed, rather than a fact the system knows; left optional, a family drifts.
 
 **Required for any skill that drives an external tool.** Declare the
 prerequisites as *checkable facts*, so that something other than a human
-reader can evaluate them:
+reader can evaluate them, in ONE string under `metadata` — the Agent
+Skills spec types `metadata` as string→string, and a top-level key of
+our own fails its validators as an unexpected key:
 
 ```yaml
-requires:
-  - binary: docker          # starts: `docker --version` exits 0
-  - binary: ffmpeg
-    probe: -version         # optional; default --version
-  - env: OPENAI_API_KEY     # set and non-empty
-  - service: http://localhost:11434   # reachable
+metadata:
+  requires: "binary:docker; binary:ffmpeg -version; binary:python>=3.9; env:OPENAI_API_KEY; service:http://localhost:11434"
 ```
 
-Three forms cover nearly everything: a binary that starts (its version
-flag exits 0; `probe:` names the flag where it is not `--version`), an
-environment variable that is set, and an endpoint that answers. Each is
-one cheap command. Locating the binary is the presence check one level
-down — a shim or launcher on `PATH` that aborts at load is found and
-cannot run; presence in a registry is not capability. Anything that
+Entries are separated by `;`, each `kind:value`. Three kinds cover
+nearly everything: `binary:NAME` is a binary that starts (its version
+flag exits 0; a flag after the name replaces `--version`, and
+`>=VERSION` after the name is the least its output may report),
+`env:NAME` is an environment variable that is set and non-empty, and
+`service:URL` is an endpoint that answers. Each is one cheap command.
+Locating the binary is the presence check one level down — a shim or
+launcher on `PATH` that aborts at load is found and cannot run;
+presence in a registry is not capability. Anything that
 cannot be reduced to one of those is a prose note in the skill body, not
 a declaration — a check nobody can run is worse than an honest sentence,
 because it looks like a guarantee.
 
 **What consumes it.** Session Start step 6 resolves `skill:` targets and
-reports the ones that do not resolve; with this block it can also report the
+reports the ones that do not resolve; with this string it can also report the
 ones that resolve *and cannot run*. A dead target and a deleted target both
 mean "observations are accumulating against something that will never act on
 them", and for any skill driving an external tool the dead one is the
