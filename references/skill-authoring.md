@@ -1274,16 +1274,22 @@ reader can evaluate them:
 
 ```yaml
 requires:
-  - binary: docker          # on PATH
+  - binary: docker          # starts: `docker --version` exits 0
+  - binary: ffmpeg
+    probe: -version         # optional; default --version
   - env: OPENAI_API_KEY     # set and non-empty
   - service: http://localhost:11434   # reachable
 ```
 
-Three forms cover nearly everything: a binary on `PATH`, an environment
-variable that is set, and an endpoint that answers. Each is one cheap
-command. Anything that cannot be reduced to one of those is a prose note in
-the skill body, not a declaration — a check nobody can run is worse than an
-honest sentence, because it looks like a guarantee.
+Three forms cover nearly everything: a binary that starts (its version
+flag exits 0; `probe:` names the flag where it is not `--version`), an
+environment variable that is set, and an endpoint that answers. Each is
+one cheap command. Locating the binary is the presence check one level
+down — a shim or launcher on `PATH` that aborts at load is found and
+cannot run; presence in a registry is not capability. Anything that
+cannot be reduced to one of those is a prose note in the skill body, not
+a declaration — a check nobody can run is worse than an honest sentence,
+because it looks like a guarantee.
 
 **What consumes it.** Session Start step 6 resolves `skill:` targets and
 reports the ones that do not resolve; with this block it can also report the
@@ -1291,11 +1297,6 @@ ones that resolve *and cannot run*. A dead target and a deleted target both
 mean "observations are accumulating against something that will never act on
 them", and for any skill driving an external tool the dead one is the
 commoner case.
-
-**The general principle.** Presence in a registry is not capability. Any
-inventory an agent selects from needs a liveness dimension, because the
-failure it otherwise produces — confidently choosing a listed thing that
-cannot run — is invisible at selection time and expensive at use time.
 
 ## Retiring skills — harvest before you retire
 
