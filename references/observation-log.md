@@ -5,14 +5,7 @@ Load triggers: creating the workspace or setting up the log; archiving, or verif
 The core skill carries the per-invocation rules: where the log is, how to
 name and number a file, the frontmatter format, and the archival rule.
 This file holds the layout in full, the helper snippets, and the reasoning
-behind the rules. Load it when setting up the directory for the first
-time, when archiving, when something about ids or frontmatter looks wrong,
-and before changing how any other tool or skill reads the log.
-Also load it, as the core skill's pointers direct, before resolving,
-dismissing or citing an observation, when setting `parked` or `reference:`,
-before adding or changing an enforcement trigger or writing a new
-instrument over the log, and whenever a scan, sweep or id probe comes back
-empty.
+behind the rules; the load triggers above say when to open it.
 
 ## Contents
 
@@ -196,21 +189,16 @@ and the file").
 
 ### Unquoted `: ` in a prose value — how far it drifts before anyone notices
 
-The core states the rule (quote every prose value). This is the measurement
-behind it, because the failure is unusually quiet and the scale surprises
-people.
-
-An unquoted `: ` inside a free-text value is invalid YAML. The frontmatter
-still *extracts* — a regex that slices between the two `---` lines is happy —
-so the session-start scan reports the file as parsed and the log looks
-healthy. What breaks is every consumer that actually **parses**: a review
-reading `status`, a hook counting `skill:`, a validator checking the header.
-Those throw on the file, and a thrown file is usually skipped rather than
-reported.
-
-Measured on one live log: about one header in ten unparseable, most in
-`resolution:` (the field most likely to hold a colon), each written by
-following a template that carried the value unquoted.
+The core states the rule (quote every prose value); this is the measurement
+behind it, because the failure is unusually quiet. An unquoted `: ` in a
+free-text value is invalid YAML, yet the frontmatter still *extracts* (a
+regex slicing between the two `---` lines is happy), so the session-start
+scan reports the file parsed while every consumer that actually **parses**
+— a review reading `status`, a hook counting `skill:`, a validator checking
+the header — throws on the file, and a thrown file is usually skipped
+rather than reported. Measured on one live log: about one header in ten
+unparseable, most in `resolution:` (the field most likely to hold a colon),
+each written by following a template that carried the value unquoted.
 
 The scan's `suspect` count is the early warning: it reports headers that
 look invalid by shape — an unquoted `: `, text after a closing quote
@@ -245,31 +233,26 @@ ASCII pair; for a quotation inside the value use »…« or `\"`.
 ### A list entry holding a colon is not portable
 
 The frontmatter names no single parser, so "valid" means: loads under
-every YAML parser a consumer of this log is likely to use. Two rules
-disagree on one line, and the template used to produce it. Under the
-YAML 1.2 reading, a `:` inside a plain scalar in flow context is part of
-the scalar when the next character is not a space, so `skill:
-[plugin:name]` is the list of one string it looks like; under the older
-rule, which libyaml-backed parsers (Ruby's Psych, Go, `yq`) have applied
-in some versions, a `:` ends the plain scalar and the line raises `found
+every YAML parser a consumer of this log is likely to use. Under the YAML
+1.2 reading, a `:` inside a plain scalar in flow context is part of the
+scalar when the next character is not a space, so `skill: [plugin:name]`
+is the list of one string it looks like; under the older rule, which
+libyaml-backed parsers (Ruby's Psych, Go, `yq`) have applied in some
+versions, a `:` ends the plain scalar and the line raises `found
 unexpected ':' while scanning a plain scalar`. Both are correct
-implementations of different specifications, so the header is neither
-valid nor invalid on its own — it is not portable. Measured on one
-202-file log: the shipped scan reported 8 suspect headers, a PyYAML pass
-0 invalid, a Psych pass 127 invalid, and all three were right about the
-same corpus.
-
-The failure is invisible from either side: a Python consumer
-(`migrate-log.py`, `validate-skill-bundle.py`, most hooks) sees a clean
-log forever; a consumer on the other rule sees most of it fail to load.
-So the rule is the intersection: **quote any list entry that contains a
-colon** — `skill: ["superpowers:test-driven-development",
-task-observer]` — or use a block list, where the colon is legal
-unquoted. Both forms parse identically under both rules; the cost is two
-characters per scoped entry. A plugin-scoped name is not a bare
-kebab-case name. `scripts/migrate-log.py` already
-writes the quoted form, so a migrated log is portable; entries written
-by hand from the template are the ones to check.
+implementations of different specifications, so the header is not
+portable — and the failure is invisible from either side: a Python
+consumer (`migrate-log.py`, `validate-skill-bundle.py`, most hooks) sees a
+clean log forever; a consumer on the other rule sees most of it fail to
+load (one 202-file log: 8 suspect by the shipped scan, 0 invalid under
+PyYAML, 127 under Psych, all three right about the same corpus). So the
+rule is the intersection: **quote any list entry that contains a colon**
+— `skill: ["superpowers:test-driven-development", task-observer]` — or
+use a block list, where the colon is legal unquoted. Both forms parse
+identically under both rules (a plugin-scoped name is not a bare
+kebab-case name). `scripts/migrate-log.py` already writes the quoted form,
+so a migrated log is portable; entries written by hand from the template
+are the ones to check.
 
 The scan's `suspect` count sees this class through one rule of its own:
 in a value opening with `[`, it drops every quoted string and any
@@ -286,26 +269,19 @@ with the parser you already trust is the one to distrust
 
 ### A park condition names the result, never your own vehicle
 
-`parked_until:` must name a condition that can occur — but there is a
-second, sharper test that the first one passes right past.
-
-"PR #N is merged or closed" waits on a path the other party need not take.
-A maintainer folds the change into a commit of their own with a co-author
-trailer, cherry-picks it, or rewrites it; the PR stays open or is closed as
-overtaken, while **the result the entry was waiting for has fully
-arrived**. The condition never fires — the normal case for a
-contribution to a repository someone else maintains, not the exception.
-
-So the test is not only *can this condition occur at all* but **can the
-result arrive without the condition firing?** For anything depending on
-another party's process the answer is yes, so phrase the condition on the
-**text of the target artefact** — "rule X is present in `main`'s
-SKILL.md" — which is answered by reading the target, whatever route the
-change took to get there.
-
-The same applies to any vehicle standing in for a result: a ticket
-resolved, a build green, a message replied to. Park on what you actually
-need to be true.
+`parked_until:` must name a condition that can occur — and pass a second,
+sharper test: **can the result arrive without the condition firing?** "PR
+#N is merged or closed" waits on a path the other party need not take: a
+maintainer folds the change into a commit of their own, cherry-picks it or
+rewrites it, the PR stays open or is closed as overtaken, and **the result
+the entry was waiting for has fully arrived** while the condition never
+fires — the normal case for a contribution to a repository someone else
+maintains. For anything depending on another party's process the answer
+is yes, so phrase the condition on the **text of the target artefact** —
+"rule X is present in `main`'s SKILL.md" — which is answered by reading
+the target, whatever route the change took. The same applies to any
+vehicle standing in for a result: a ticket resolved, a build green, a
+message replied to. Park on what you actually need to be true.
 
 A condition phrased as text in the target is checked by a phrase search,
 and hard-wrapped Markdown breaks a line-oriented one: the phrase spans a
@@ -324,17 +300,14 @@ when that copy carries the fix.
 
 ### Context preservation — the `reference:` field
 
-**Context preservation:** if an observation depends on session-local data
-(uploads, API output), save that context into the workspace first and set
-`reference:` to its path — an observation whose evidence dies with the
-session is incomplete. The pointer must survive the handoff too:
-`reference:` — like any pointer that hands work to a later session — must
-name a durable path, one that outlives the session and a reboot and that
-a session other than this one can resolve. A session-scoped temp
-directory fails both tests, and a role name ("the scratchpad", "my
-notes") is not a path at all. Such a pointer cannot fail at write time,
-only at read time, when its author is no longer there to repair it — a
-pointer a fresh session cannot follow is not preservation.
+Rule: core, How to Log ("Context preservation"). `reference:` — like any
+pointer that hands work to a later session — names a durable path, one
+that outlives the session and a reboot and that a session other than this
+one can resolve. A session-scoped temp directory fails both tests, and a
+role name ("the scratchpad", "my notes") is not a path at all. Such a
+pointer cannot fail at write time, only at read time, when its author is
+no longer there to repair it — a pointer a fresh session cannot follow is
+not preservation.
 
 ### Commands inside an observation — run before the file is written
 
@@ -404,17 +377,14 @@ Session Start Protocol (step 2) runs it, and a reader reviews it there.
 The notes below explain its parts.
 
 **Why the line carries a time and a source, not just a date.** The
-workspace is deliberately shared across every project that observes the
-same globally installed skill — that is the anchoring rule — so
-`checkpoints.log` is a multi-project, multi-session file by design. A line
-carrying only `YYYY-MM-DD` cannot distinguish two sessions that ran the
-same day, which is the common case and precisely the case the file exists
-to adjudicate: the whole point of the trace is to show that *this* session
-ran the protocol, as opposed to the skill having been loaded and the
-protocol skipped. Two same-day lines with identical text prove that one
-session did, not which. The time disambiguates the session; the bracketed
-source (the working directory's last segment, or any equally cheap
-per-project token the harness exposes) disambiguates the project.
+workspace is shared across every project that observes the same globally
+installed skill (the anchoring rule), so `checkpoints.log` is a
+multi-project, multi-session file by design, and the trace exists to show
+that *this* session ran the protocol rather than loading the skill and
+skipping it. Two same-day lines with identical text prove that one session
+did, not which: the time disambiguates the session, the bracketed source
+(the working directory's last segment, or any equally cheap per-project
+token the harness exposes) the project.
 
 The final append is the session-start run's own trace (see "The scan ends
 in a write, not only a print"); a review's work-queue pass over the same
@@ -562,19 +532,15 @@ refusal too, and the refusal is reported in its own words.
 **The guard is scoped by what a command IS, not by what it looks like.**
 Both named instances above — `SCAN COMMAND BROKEN`, `ID COMMAND BROKEN` —
 are log-reading snippets shipped inside this skill, so the rule reads, in
-practice, as being about *those*. It is not, and the gap is precisely where
-it costs most: the one-line environment probes run ad hoc mid-investigation,
-whose empty result goes straight into a runbook or an observation body as a
-fact.
-
-The shape, a finding that was not there:
-`ls /usr/bin/*askpass* /usr/lib/ssh/*askpass* …` in an interactive zsh
-prints `no matches found` — a glob error, not an answer — and "no askpass
-helper present" gets written down. The command is not a "log instrument",
-so it does not attract the guard.
-Apply it to **any command whose empty or zero output is about to become a
-claim**: pair it with a second probe by different means, or state the
-result as "the probe returned nothing" rather than "there is nothing".
+practice, as being about *those*. It is not, and the gap is where it costs
+most: the one-line environment probes run ad hoc mid-investigation, whose
+empty result goes straight into a runbook or an observation body as a fact
+(`ls /usr/bin/*askpass* …` in an interactive zsh prints `no matches found`
+— a glob error, not an answer — and "no askpass helper present" gets
+written down). Apply it to **any command whose empty or zero output is
+about to become a claim**: pair it with a second probe by different means,
+or state the result as "the probe returned nothing" rather than "there is
+nothing".
 
 **When the instrument is an external process, the independent probe
 exercises the same code path.** For a literal path the second count is
@@ -594,35 +560,31 @@ found".
 
 **A number read from a file another process is still writing is
 provisional until that process is known to have exited.** This is the
-fourth state, and the guard's own remedy does not catch it: a second
-count by different means reads the same unfinished source and is just as
-empty, so two independent probes agree on a false negative with full
-confidence — the population is fine, the parse is fine, only the timing
-is wrong. The partial file is not visibly partial: `grep`, `awk` and
-`sed` flush per line to a terminal and per block to a file or pipe, so a
-producer still running that has found nothing *yet* is byte-identical to
-one that finished and found nothing. A harness's interim-read affordance
-for a backgrounded command is not a completeness signal. So for this
-class the guard is not a second count but a liveness-and-exit check —
-the producer's exit status, or a process check (`pgrep` on its
-pattern) — run before the interim output is interpreted at all, never as
-a cross-check after a plausible-looking empty result.
+fourth state, and a second count by different means reads the same
+unfinished source and is just as empty, so two independent probes agree on
+a false negative with full confidence. The partial file is not visibly
+partial: `grep`, `awk` and `sed` flush per line to a terminal and per
+block to a file or pipe, so a producer still running that has found
+nothing *yet* is byte-identical to one that finished and found nothing,
+and a harness's interim-read affordance for a backgrounded command is not
+a completeness signal. So for this class the guard is a liveness-and-exit
+check — the producer's exit status, or `pgrep` on its pattern — run before
+the interim output is interpreted at all, never as a cross-check after a
+plausible-looking empty result.
 
 **When the instrument is code written in this session, its input coverage
 is unverified by construction — print what it ingested, not only what it
 found.** A shipped snippet has at least been run against the population
 it is meant to read; a throwaway parser has been run against whatever its
-author's heuristic happened to match, and a pass from an instrument that
-saw a fraction of its input is not evidence of anything. So the guard's form for session-written
-code is a **coverage assertion before any result**: print the count of
-terms, rows or files the instrument read and assert it against the
-canonical source's own count (the block's line count, the directory's
-file count, the table's row count) — a mismatch fails the step rather
-than degrading to a heuristic. The count is the guard; the hits are the
-finding. The same applies to green results as to empty ones: "0 hits" is
-a claim about the corpus only once the instrument is known to see the
-corpus (the timelessness scan in `skill-authoring.md` records which
-patterns ran for exactly this reason).
+author's heuristic happened to match. So the guard's form for
+session-written code is a **coverage assertion before any result**: print
+the count of terms, rows or files the instrument read and assert it
+against the canonical source's own count (the block's line count, the
+directory's file count, the table's row count) — a mismatch fails the step
+rather than degrading to a heuristic. The count is the guard; the hits are
+the finding, green or empty: "0 hits" is a claim about the corpus only
+once the instrument is known to see the corpus (the timelessness scan in
+`skill-authoring.md` records which patterns ran for exactly this reason).
 
 **A populated result gets the guard too, and is questioned less than a
 zero because it looks like evidence.** Five shapes pass every
@@ -668,33 +630,30 @@ two apart from outside.
 
 ### A refused print is not an empty log
 
-The session-start scan does two different jobs in one script, and they have
+The session-start scan does two different jobs in one script, with
 different appetites. Everything up to and including the `checkpoints.log`
-write asks only for *facts about* the files: how many exist, how many have a
-parseable header, how many — in the directory and in `archive/` — look
-like invalid YAML. The trailing loop asks for
-the **contents** — it reads instruction-shaped text out of files and puts it
-into the agent's context, which is what builds awareness of the backlog.
+write asks only for *facts about* the files: how many exist, how many have
+a parseable header, how many — in the directory and in `archive/` — look
+like invalid YAML. The trailing loop asks for the **contents** — it reads
+instruction-shaped text out of files into the agent's context, which is
+what builds awareness of the backlog — and that half is subject to
+whatever governs context, not only to whatever governs the filesystem.
+Under a permission mode with an automated content classifier it can be
+refused outright (seen as `Instruction Poisoning`, on a command that had
+run minutes earlier against an empty directory). The property is inherent
+to the step, so it does not go away with rewording, and it gets **more**
+likely as the log grows. This is why the counts and the trace run first.
+Three consequences:
 
-That second half is subject to whatever governs context, not only to
-whatever governs the filesystem. Under a permission mode with an automated
-content classifier it can be refused outright — reported in the field as
-`Instruction Poisoning`, on a command that had run without objection minutes
-earlier against an empty directory. The property is inherent to the step, so
-it does not go away with rewording, and it gets **more** likely as the log
-grows, not less.
-
-This is why the counts and the trace run first. Three consequences:
-
-- **A refusal is not an empty log, and is never reported as one.** The
-  improvisation the situation invites — "the scan found nothing" — is the
-  exact failure the log is meant to prevent. Say that the print was refused,
-  name the reason the classifier gave, and give the counts.
+- **A refusal is not an empty log, and is never reported as one.** "The
+  scan found nothing" is the exact failure the log is meant to prevent.
+  Say that the print was refused, name the reason the classifier gave, and
+  give the counts.
 - **The counts-only form is the documented fallback**, not a degraded
-  improvisation. It still satisfies the `SCAN COMMAND BROKEN` guard, because
-  `n` and `parsed` both come from the half that ran. Ordering the script the
-  other way round would put the guard's own inputs downstream of the half
-  that can be refused — the guard would go quiet exactly when it is needed.
+  improvisation. It still satisfies the `SCAN COMMAND BROKEN` guard,
+  because `n` and `parsed` both come from the half that ran; ordered the
+  other way round, the guard's own inputs would sit downstream of the half
+  that can be refused, and it would go quiet exactly when it is needed.
 - **Awareness is genuinely reduced, and that is worth one line to the user.**
   The session proceeds without the backlog in context; it is not equivalent
   to a scan that ran.
@@ -770,22 +729,19 @@ Where several skills implement one idea — the same methodology for
 different tools, the same structure for different subjects, the same
 companion pattern for different base skills — the shared part drifts by
 default, because each member is maintained only in the sessions that use
-it and nobody looks at the set. Measured in real libraries: a rule that is
-pure epistemics, applicable to every member of a five-skill family,
-present in one of five; a rule whose own text says it "applies to any
-file-writing script, not specific to this one", present in one of four,
-while two of the other three break the same way. Nobody removed anything;
-some members simply grew and others did not.
+it and nobody looks at the set (measured in real libraries: a rule
+applicable to every member of a five-skill family present in one; a rule
+whose own text says it "applies to any file-writing script" present in
+one of four, while two of the other three break the same way). Nobody
+removed anything; some members grew and others did not.
 
 **Why the check has to be a write-time step rather than a habit.** An
 insight found while using one member usually applies to the rest, and
 nothing in the ordinary workflow asks — so `skill:` collapses to the one
-skill in front of you and the family diverges quietly. The divergence has
-no symptom until someone reads two members side by side, which happens at
-a drift audit, months later.
-
-The `skill:` field is already a list, so multi-skill observations are
-expressible. The mechanism exists; the *check* does not — and a list field
+skill in front of you, and the divergence has no symptom until someone
+reads two members side by side at a drift audit, months later. The
+`skill:` field is already a list, so multi-skill observations are
+expressible; the mechanism exists, the *check* does not, and a list field
 with no rule to populate it collapses to a single value. Four parts, in
 increasing cost:
 
@@ -862,19 +818,17 @@ The installed names a session can see are the user scope plus the
 project it runs in. A skill scoped to another project, and the generator
 source a project copy is rendered from (a tool-owned directory rendered
 into `.claude/skills/`), are invisible from here, so "no installed skill
-covers this" is a blind spot of the observer until those scopes have
-been searched — and the failure only runs one way: a narrow scope never
-invents a skill, it only misses real ones, which is the costly outcome. Before writing
-`proposes_skill:`, a `none` in `siblings_checked:`, or a target as
+covers this" is a blind spot until those scopes have been searched — and
+a narrow scope never invents a skill, it only misses real ones. Before
+writing `proposes_skill:`, a `none` in `siblings_checked:`, or a target as
 missing, search the other scopes by the problem as well as by the name —
 a proposal is named after the task that surfaced it, and the skill that
 already solves it rarely shares the name — and record in
-`siblings_checked:` which scopes were searched. "Not found" is a finding
-only together with where you looked, exactly as Session Start step 6
-says of targets. Enumerate the scopes by glob rather than a recursive
-`find`, which over a projects root full of worktrees and dependency
-trees runs for minutes, and guard the enumeration: an empty result tells
-you about the instrument before it tells you about the library.
+`siblings_checked:` which scopes were searched: "not found" is a finding
+only together with where you looked (Session Start step 6). Enumerate the
+scopes by glob rather than a recursive `find`, which over a projects root
+full of worktrees runs for minutes, and guard the enumeration: an empty
+result tells you about the instrument before the library.
 
 ```bash
 root="[PROJECTS ROOT]"   # absolute path of the directory holding the user's repositories
@@ -905,17 +859,15 @@ skill already relies on "the write is the enforcement", a new rule that
 writes nothing is the odd one out and should be suspected on that basis.
 
 **Recording the verdict is not recording its evidence.** The field makes
-the absence of the *ritual* visible; it does nothing for the absence of
-the *grounds*, and once the ritual is habitual the failure moves from the
-omitted field to the confidently filled one: a specific-sounding verdict
-can be an assumption that reads like a checked one. The asymmetry decides where the ground
-goes: a sibling wrongly included costs one redundant paragraph at the
-next review, where someone reads it and drops it; a sibling wrongly
-excluded leaves the family silently and for good, because nothing
-downstream ever acts on a negative verdict. So every exclusion names
-what it rests on — the file and section read in that sibling — or says
-`assumed`, and the review opens an `assumed` sibling before accepting
-the exclusion. Example:
+the absence of the *ritual* visible, not the absence of the *grounds*, and
+once the ritual is habitual a specific-sounding verdict can be an
+assumption that reads like a checked one. The asymmetry decides where the
+ground goes: a sibling wrongly included costs one redundant paragraph at
+the next review; a sibling wrongly excluded leaves the family silently and
+for good, because nothing downstream ever acts on a negative verdict. So
+every exclusion names what it rests on — the file and section read in that
+sibling — or says `assumed`, and the review opens an `assumed` sibling
+before accepting the exclusion. Example:
 `siblings_checked: "list-commands: render, pick, close — render added; pick excluded (pick.md §2, selects by stable id); close excluded (assumed)"`.
 
 **4. Propagation and drift audit at review time** — `weekly-review.md`,
@@ -955,33 +907,30 @@ derivation. `sort -n` needs no stripping; the arithmetic does. The floor
 is read as digits only, so a floor file written with a CRLF, padding or
 spaces still reads as its number instead of as nothing.
 
-A skill that hands the agent a
-shell command owns that command's portability: lead with the portable
-form, never offer it as a footnote the agent reaches for after the primary
-has failed — and make any command that derives a number from a file fail
-loudly on an empty result, because a command that fails to empty rather
-than to error may never announce that it failed at all. A snippet meant
-to run in an agent harness calls core utilities by names a profile cannot
-rebind — the harness commonly initialises its shell from the user's
-profile, and an alias or function named `ls` (`eza`, `lsd`, a wrapper with
-default flags) changes what that word runs while the snippet reports
-nothing wrong. Prefer shell globbing and builtins; where a utility is
-unavoidable, it is `find`, or `command <name>`. And a guard tests its own
-inputs: the listing is asserted against a file count before the floor is
-merged in, because a cached counter must never be able to satisfy a check
-whose purpose is to prove the log was read. A snippet that
-spawns one process per file carries an undeclared upper bound on the log
-it can read: per-file spawning degrades linearly with a large constant —
-seconds for a hundred files on Linux, past a two-minute tool timeout on
-Windows — so it never warns, it stops completing, and a backgrounded scan
-is indistinguishable from a slow one until something downstream consumes
-a partial answer. The counts in the session-start scan are batched
-(`-exec … {} +`), and the content print and the archival sweep are one
-`awk` each over the directory's glob; the only per-file process left is
-the `mv` of a file due for archival, bounded by the files due rather than
-by the log. Treat a scan that does not return as a broken instrument, never as
-a slow one to wait on — the BROKEN guard cannot fire for a command that
-never finished.
+A skill that hands the agent a shell command owns that command's
+portability: lead with the portable form, never offer it as a footnote the
+agent reaches for after the primary has failed — and make any command that
+derives a number from a file fail loudly on an empty result, because a
+command that fails to empty rather than to error may never announce that
+it failed at all. A snippet meant to run in an agent harness calls core
+utilities by names a profile cannot rebind — the harness commonly
+initialises its shell from the user's profile, and an alias or function
+named `ls` (`eza`, `lsd`, a wrapper with default flags) changes what that
+word runs while the snippet reports nothing wrong. Prefer shell globbing
+and builtins; where a utility is unavoidable, it is `find`, or `command
+<name>`. A guard tests its own inputs: the listing is asserted against a
+file count before the floor is merged in, because a cached counter must
+never be able to satisfy a check whose purpose is to prove the log was
+read. And a snippet that spawns one process per file carries an undeclared
+upper bound on the log it can read: per-file spawning degrades linearly
+with a large constant (seconds for a hundred files on Linux, past a
+two-minute tool timeout on Windows), so it never warns, it stops
+completing. The session-start scan's counts are batched (`-exec … {} +`),
+the content print and the archival sweep are one `awk` each over the
+directory's glob, and the only per-file process left is the `mv` of a file
+due for archival, bounded by the files due rather than by the log. Treat a
+scan that does not return as a broken instrument, never as a slow one to
+wait on — the BROKEN guard cannot fire for a command that never finished.
 
 ### Shell portability — bash 3.2: the `case` pattern inside `$( )` and the empty array under `set -u`
 
@@ -1006,51 +955,46 @@ against this skill's guidance.
 
 ### The guard line, the sweep's count and the noclobber create
 
-The listing guard distinguishes "the log says zero" from "I could not read
-the log": a command that fails to empty rather than to error would
+The listing guard tells "the log says zero" from "I could not read the
+log" (core): a command that fails to empty rather than to error would
 otherwise propose id 1 in a populated log. It compares the number of ids
 the glob listed with `find`'s count of prefixed files in the same two
 directories, so it fires on a partial listing as well as an empty one,
 and it runs on the listing alone, before the floor enters — merged into
-the maximum first, the floor would let a listing broken to nothing pass. The highest file id is kept
-apart from the floor for the same reason: the new id is the larger of
-the two plus one, and a file maximum below the floor is a NOTE (ids
-issued without a file), not a halt, because older snippets left exactly
-that state behind on every run that stopped after its floor write. The
-floor is written last, after the create, so a run that creates no file —
-a check, a collision, a failed create — never moves it. The sweep carries the same
-guard in its own right — a separate `awk` counts the files the sweep's
-glob reaches, and the block halts if that count is zero while `find`
-reports files present. The count comes from its own command because the
-sweep is a single `awk` with no loop counter to read, and a count riding
-the sweep's output would share its failure. An
+the maximum first, the floor would let a listing broken to nothing pass.
+The highest file id is kept apart from the floor for the same reason: the
+new id is the larger of the two plus one, and a file maximum below the
+floor is a NOTE (ids issued without a file), not a halt, because older
+snippets left exactly that state behind on every run that stopped after
+its floor write. The floor is written last, after the create, so a run
+that creates no file — a check, a collision, a failed create — never
+moves it. The sweep carries the same guard in its own right: a separate
+`awk` counts the files the sweep's glob reaches, and the block halts if
+that count is zero while `find` reports files present, because an
 archival loop that never enters its body moves nothing and exits
-successfully, so without the count "nothing was due for archival" and
-"the loop never ran" are the same output. The `noclobber` create covers
-the one case per-file isolation does not ("Why this is the entire
-concurrency story" below): two sessions that pick the same id *and* the
-same slug resolve to one identical path, where the second writer would
-silently replace the first. So the snippet creates the file under
-`noclobber` — write the body only after that create succeeds.
+successfully — without the count, "nothing was due" and "the loop never
+ran" are the same output. The `noclobber` create covers the one case
+per-file isolation does not ("Why this is the entire concurrency story"
+below): two sessions that pick the same id *and* the same slug resolve to
+one identical path, where the second writer would silently replace the
+first — so write the body only after that create succeeds.
 
-**The collision guard is keyed on the id prefix, not on the path.** A
-test of `[ -e "$f" ]` — the full path, slug included —
-cannot catch the collision that actually happens: two writers deriving
-the same number with *different* slugs produce two different paths, both
-creates succeed, and two files share one id with no error anywhere. A
-guard has to be keyed on the invariant it protects; noclobber protects a
-path, the invariant is a unique number, and a guard on the path passes
-every violation of the number that uses a different slug — which is all
-of them. So the guard asks whether any file with the derived prefix
-exists in `observation-log/` or `archive/` (`find … -name 'NNNN-*.md'`,
-never a bare glob), and halts if one does. It fires when the derivation
-is stale — the id came from somewhere other than a snippet run
-immediately before this write. It cannot see a writer running at the same
-moment, whose file does not exist yet: both derive the same correct
-number from the same listing. The script closes that window with its
-number claim; the inline snippet does not, and the review's duplicate-id
-check catches what slips through. Re-run the snippet; never adjust the
-number by hand.
+**The collision guard is keyed on the id prefix, not on the path.** A test
+of `[ -e "$f" ]` — the full path, slug included — cannot catch the
+collision that actually happens: two writers deriving the same number with
+*different* slugs produce two different paths, both creates succeed, and
+two files share one id with no error anywhere. A guard is keyed on the
+invariant it protects; noclobber protects a path, the invariant is a
+unique number, and a guard on the path passes every violation of the
+number that uses a different slug — which is all of them. So the guard
+asks whether any file with the derived prefix exists in `observation-log/`
+or `archive/` (`find … -name 'NNNN-*.md'`, never a bare glob), and halts
+if one does. It fires when the derivation is stale — the id came from
+somewhere other than a snippet run immediately before this write — and
+cannot see a writer running at the same moment, whose file does not exist
+yet; the script closes that window with its number claim, the inline
+snippet does not, and the review's duplicate-id check catches what slips
+through. Re-run the snippet; never adjust the number by hand.
 
 ### Run the snippet immediately before every write
 
@@ -1283,35 +1227,28 @@ checking never.
 cannot be revisited.** `declined` means someone judged an alternative
 unworkable, and that judgement is a factual claim which can be wrong — in
 which case it silently vetoes the better solution forever, because every
-later reader finds the decision already made.
-
-So a `resolution:` on a declined entry carries **the evidence, not only the
-verdict**: what was examined (file, line, command, output), and what would
-have to be true for the decline to be wrong. And re-reading a declined
-entry obliges you to check that its premise still holds before relying on
-it — a decline is the one status whose correctness nothing downstream ever
-tests.
+later reader finds the decision already made. So a `resolution:` on a
+declined entry carries **the evidence, not only the verdict**: what was
+examined (file, line, command, output), and what would have to be true for
+the decline to be wrong. And re-reading a declined entry obliges you to
+check that its premise still holds before relying on it — a decline is the
+one status whose correctness nothing downstream ever tests.
 
 ## The `parked` status — decided, not pending
 
-**`parked` means decided, not pending.** Use it when an observation is sound
-but cannot be acted on until an external precondition is met — the scheduled
-task that produced it is disabled, the tool it describes is out of use, a
-dependency has not landed. A parked entry is OUT of the work queue: reviews
-must not re-escalate it, and the decision belongs in `status:`, not in a
-free-text note beside a `status: open` (a note nothing classifies on leaves
-the entry in the queue and it gets re-raised at every review). It is not
-resolved either, so it never archives — archival needs a resolved status plus
-a `resolved:` date. It stays in `observation-log/` indefinitely until either
-its `parked_until:` condition is met — set it back to `open` and queue it — or
-it is genuinely resolved. `parked_until:` is mandatory whenever status is
-`parked`: one line stating the condition, phrased so a later session can
-actually answer whether it has happened — and checked, before parking, for
-whether it can happen at all: ask who or what would have to act to meet the
-condition, and whether that party has a reason to do exactly the opposite
-(sometimes as the intended effect of the very thing the entry is waiting to
-observe). If the condition cannot occur, the entry is not waiting: close it on
-the substitute evidence available today, or park it on a trigger that can
+**`parked` means decided, not pending.** Use it when an observation is
+sound but cannot be acted on until an external precondition is met — the
+scheduled task that produced it is disabled, the tool it describes is out
+of use, a dependency has not landed. What a parked entry is (out of the
+work queue, never re-escalated, never archived, back to `open` and queued
+when its `parked_until:` condition is met) and why the decision belongs in
+`status:` rather than a free-text note: Frontmatter fields, `parked` and
+`parked_until`, above. Before parking, check the condition for whether it
+can happen at all: ask who or what would have to act to meet it, and
+whether that party has a reason to do exactly the opposite (sometimes as
+the intended effect of the very thing the entry is waiting to observe).
+If the condition cannot occur, the entry is not waiting: close it on the
+substitute evidence available today, or park it on a trigger that can
 actually fire — phrased on the result in the target, never on the state
 of a vehicle ("A park condition names the result, never your own
 vehicle", above).
@@ -1352,20 +1289,17 @@ like one. `git checkout -- <path>`, `git stash`, `git reset --hard`, a
 branch switch carrying local modifications, a rebase that drops a hunk,
 and above all `git clean -fd` destroy observation files as thoroughly as
 any edit; the newest files are the most exposed, because a just-written
-observation is an *untracked* file until someone commits it, and
-`git clean` exists to delete exactly those. These commands get run
-reflexively as housekeeping ("make the tree clean enough to switch
-branches"), and a continuously written log is almost always what makes the
-tree dirty.
-
-Rules: before any git operation that can discard working-tree state, copy
-`observation-log/` somewhere outside the repository, and afterwards
-confirm every file this session wrote still exists, re-creating from the
-copy if not. **Prefer committing pending observations over reverting
-them** — when the dirt in the tree is the log, a commit is always the
-cheaper way to get clean. Scope any dirty-tree guard to exclude
-`skill-observations/` rather than teaching sessions to clear it, and never
-run `git clean` with that directory in scope.
+observation is an *untracked* file until someone commits it, and `git
+clean` exists to delete exactly those — and these commands get run
+reflexively as housekeeping, when a continuously written log is almost
+always what makes the tree dirty. Rules: before any git operation that can
+discard working-tree state, copy `observation-log/` somewhere outside the
+repository, and afterwards confirm every file this session wrote still
+exists, re-creating from the copy if not. **Prefer committing pending
+observations over reverting them** — when the dirt in the tree is the
+log, a commit is always the cheaper way to get clean. Scope any dirty-tree
+guard to exclude `skill-observations/` rather than teaching sessions to
+clear it, and never run `git clean` with that directory in scope.
 
 **A log synced between two installs is a multi-writer log with no shared
 read.** The id snippet takes the maximum over the files this install can
@@ -1425,11 +1359,7 @@ after=$(total)
 if [ "$before" -ne "$after" ]; then echo "ARCHIVAL CONSERVATION BROKEN: $before -> $after"; exit 1; fi
 ```
 
-Reading a set and changing it belong in one enumeration or in two
-strictly ordered steps, never in two concurrent ones; and a check after a
-bulk operation rests on an invariant, because a probe with an aggregated
-exit code answers "missing" to a question nobody asked it. Compare a
-`resolved:` date to today portably (ISO dates sort lexically):
+Compare a `resolved:` date to today portably (ISO dates sort lexically):
 
 ```bash
 older_than_today() {   # $1 = a YYYY-MM-DD date
