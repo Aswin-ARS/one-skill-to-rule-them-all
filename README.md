@@ -135,7 +135,7 @@ This is an open-source project for the community. If you use it, I would love to
 
 ## Support the project
 
-There is no donation button and there will not be one: the project is free and community-driven, and the help it needs is reach. If you know someone who would benefit from Task Observer, tell them; if you have an audience, tell them; if you know someone who has one, tell them. Public recommendations go into the Recommended by and Listed in sections below. The whole story is in [SUPPORT.md](SUPPORT.md).
+There is no donation button: the project is free and community-driven, and the help it needs is reach. If you know someone who would benefit from Task Observer, tell them; if you have an audience, tell them; if you know someone who has one, tell them. Public recommendations go into the Recommended by and Listed in sections below. The whole story is in [SUPPORT.md](SUPPORT.md).
 
 ## License
 
