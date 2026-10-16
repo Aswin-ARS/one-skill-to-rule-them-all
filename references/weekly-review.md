@@ -1884,11 +1884,18 @@ ones as Step 5 says: the delete grant first, never a holding folder. The rule is
 not to date directories: before pruning a directory, list what else is in
 it — an assembly script, a verification script, working notes — and move
 anything that is not a staged skill copy aside first, or leave the
-directory and prune only the copies. A prune that fires correctly on the
-oldest directory deletes everything in it, and a missing tool is noticed
-the next time it is needed, never at the moment of deletion. Rounds, not
-days, are what the rule counts (a same-day second round is its own
-copy).
+directory and prune only the copies. Rounds, not days, are what the rule
+counts (a same-day second round is its own copy). **Derive the prune list
+per skill, and put it in the offer.** Before offering or performing a
+prune, list for each skill every staged copy of it under
+`skill-updates/`, newest round first, with its reconciliation state —
+(a) identical, (b) superseded, (c)/(d) uninstalled; only installed
+copies after the second are candidates. The offer shows that per-skill
+table, so the user approves the list the rule produced, not a
+description of round directories: the two views agree only while every
+round stages the same skills, and a round that stages a skill for the
+first time in several rounds is where they diverge — its previous copy,
+in an older directory, is that skill's only rollback.
 
 **Executable artefacts are staged like skills.** The second-violation rule
 makes the review produce barriers — a hook, a lint rule, a script a hook
