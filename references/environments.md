@@ -720,14 +720,18 @@ installing session therefore sees everything pass (bundle complete, skill
 listed, protocol ran, hook emits valid JSON) while the one thing that
 matters is untested, and the tempting close is "installed and tested".
 Report the install as **activation unverified** until a fresh session has
-been seen invoking the skill on its own, and name the check: in the next
-session, before any work, confirm the skill was invoked (not merely
-listed) and that the Session Start Protocol ran — verify by evidence of
+been seen invoking the skill on its own, and name the check: the next
+session opens with ordinary work that names neither the skill, the log
+nor the check, and only afterwards is the skill confirmed invoked (not
+merely listed) with the Session Start Protocol run — by evidence of
 invocation, not by a side effect that a hand invocation would also
 produce. If the environment offers no way to start a fresh session from
 the installing one (a GUI-only harness, no CLI), hand the check to the
-user as the first item of their next session; an unverifiable step never
-closes silently as "tested".
+user: start the next session with unrelated work, then look at the
+`session-start scan` line in `checkpoints.log` or at the transcript; an
+unverifiable step never closes silently as "tested". A pass from a
+session whose first request named the skill is a hand invocation and is
+discarded, not counted (`skill-authoring.md`, "Trial design").
 
 The runtime cannot diagnose its own absence — Session Start step 4 only
 runs once activation has already succeeded — so the external diagnostic
@@ -737,9 +741,7 @@ of tool-using work, activation never happened**; check the activation
 block in the config, or install the hook. The directory existing proves
 only that one session ran: a first session loaded by hand, or by a lucky
 description match, writes entries and the trace, and the install then
-goes quiet (observed: four entries on day one, then three weeks of work
-with nothing logged and no review, found by an audit that read the
-dates). So the diagnostic has a second half: **the last
+goes quiet. So the diagnostic has a second half: **the last
 `session-start scan` line in `skill-observations/checkpoints.log` is the
 last session that ran the protocol** — days old while work went on means
 activation is not running, whatever the log holds. The scan prints a
