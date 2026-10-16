@@ -18,6 +18,7 @@ in an environment without filesystem access.
   - Activation config — late, intermittent, and why the guard cannot live inside it
   - The probe rides inside the first batched call
   - Install-layout hazards — three ways a skill silently stops existing
+  - Other agent tools that read the same skills folder
   - Two harness behaviours that block the protocol rather than break it
   - If CLAUDE.md (or the equivalent config) is governance-protected
   - A third denial class: an automated content classifier
@@ -906,10 +907,9 @@ a library of any size the natural organising instinct is to group skills into
 category folders — `skills/seo/`, `skills/clients/`, `skills/writing/` — and
 doing so makes **every skill inside them cease to exist**: no error, no
 notice, no change in behaviour except that the skills stop being offered.
-There is nothing to debug, because "not found" has no error to report. The
-layout is not merely the happy path; it is the rule, and it does not travel
-with the maintainer who reorganises six months later. Keep every skill
-directly under the skills directory.
+The layout is not merely the happy path; it is the rule, and it does not
+travel with the maintainer who reorganises six months later. Keep every
+skill directly under the skills directory.
 
 **A backup inside the skills directory registers as a rival skill.** The
 obvious way to back a skill up before overwriting it —
@@ -941,6 +941,19 @@ check the hook rather than the skill. The same silent death follows, with
 the mode intact, when the script lives on a drive that is not mounted at
 session start: keep hook scripts on local storage ("Anchoring the
 workspace", "Stable is not the same as always available").
+
+### Other agent tools that read the same skills folder
+
+A second agent tool that lists the same skills directory shows the
+description to its own model, and the description starts the skill by
+itself — it carries the session-start trigger so that activation
+survives an unreachable config file (tier 1 above). Removing the
+activation block from that tool's instruction file does not keep the
+skill off there. To keep it off, use that tool's own skill-permission or
+skill-path setting, or stop sharing the folder. Where it does run, the
+protocol's assumptions (the pin, the permission model, the hooks) do not
+hold, and a log it writes is a shard ("Before creating a log, search for
+one").
 
 ### Two harness behaviours that block the protocol rather than break it
 
