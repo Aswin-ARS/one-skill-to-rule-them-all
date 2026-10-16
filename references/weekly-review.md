@@ -915,10 +915,10 @@ entries target the same member. Then, before anything is presented:
   frontmatter alone, and open each such sibling before actioning the
   entry: an exclusion grounded on `assumed` is a review item, not a
   verdict (`observation-log.md`, "Record the verdict"). Check
-  `commands_verified:` in the same pass: a body that quotes a command
-  with the field missing or blank quotes a command nobody ran — run it
-  now, or record `NOT RUN` with why, before the entry is actioned or
-  cited.
+  `commands_verified:` in the same pass: a body that quotes a command or
+  proposes a predicate with the field missing or blank quotes one nobody
+  ran — run it now, on the instance the entry describes, or record
+  `NOT RUN` with why, before the entry is actioned or cited.
 - **Confidentiality pass over the log itself.** For every OPEN
   `open-source` observation, check the Issue and Improvement fields for
   client-identifying specifics no longer needed for context and strip
@@ -1057,7 +1057,20 @@ verification"), because a dated first-party claim is forbidden there
 The cost is one query; the alternative is a rule that is wrong in exactly
 the cases nobody sampled.
 A command the entry quotes is a claim of this kind; its `commands_verified:`
-clause (`observation-log.md`) says whether anyone has run it.
+clause (`observation-log.md`) says whether anyone has run it. A predicate
+the entry proposes — a regex, a hook condition — is one too, and a
+predicate never run at write time gets its first run here, on the
+instance the entry describes. **When running a quoted command, flag or
+predicate shows the suggested form is wrong, apply the form that ran and
+record it:** append "applied form differs from the suggestion: <form>" to
+the entry's `resolution:` (Step 6), and list the entry under "corrected
+on apply" in the summary (Step 8). A trailer key the tool does not take
+(`git commit --trailer "BREAKING CHANGE=…"`, which git writes as free
+text) or a filter flag that does not exist (`gh pr diff` has `--exclude`
+and no include form) is applied in the form that works; left unrecorded,
+the entry, which later readers and any upstream report quote, still
+carries the wrong command, and the correction outlives the review only
+if someone wrote it down by hand.
 
 Where an approved item's destination is an upstream report — an issue or
 PR against a skill maintained by someone else — drafting that report IS the
@@ -1608,13 +1621,15 @@ any count. A file the review itself archived since Step 1 shows under
 finding.
 Re-run the Step 1 duplicate-id check over the new listing as well: this
 re-scan is not redundant with Step 1, because the collisions it exists to
-catch are the ones created *during* the run. A run that trims this step as duplicate work removes the only
-check positioned after the writes it is checking for.
+catch are the ones created *during* the run.
 
 Then, in each applied observation's frontmatter set
 `status: actioned`, `resolved: YYYY-MM-DD` (today), and
 `resolution: "Staged for [skill-name] at skill-updates/<anchor>/[skill-name] (weekly review)"`
-— editing only those fields, in that one file. An entry Step 5 classed
+— editing only those fields, in that one file. An entry whose quoted
+command or predicate the Step 5 run disproved carries the correction in
+the same field: `… (weekly review); applied form differs from the
+suggestion: <form>`. An entry Step 5 classed
 `partially-applied` is marked the same way, with the remainder named in
 `resolution:` and its carrier observation already written (Step 5): a
 resolved entry is the one thing no later step re-reads, so the
@@ -1673,6 +1688,7 @@ files are split by owner"); or "none"
 
 ### Observations Actioned
 [numbers and titles]
+[corrected on apply: #id — suggested form → form that ran; or "none"]
 
 ### Family coherence
 [each multi-skill observation: applied to all listed skills, or partially

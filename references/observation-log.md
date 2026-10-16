@@ -173,7 +173,7 @@ promise about the rest.
 | `resolved` | Resolution date; set only when status is `actioned`, `declined` or `superseded`. Archival is gated on it. |
 | `resolution` | What was done, or why declined. When the fix is a prescription (a rule, a check, a form to use), an `actioned` resolution names where it now lives — a file and section, a staged skill copy, or a registered backlog entry. If no such place can be named, the prescription has been described, not applied: leave the entry `open`, or resolve the part that landed and carry the rest in a carrier observation (below). A review's own resolution already names the staged copy (`weekly-review.md`, Step 6); this is the rule for a resolution set outside a review. |
 | `reference` | Optional path to saved session-local evidence. |
-| `commands_verified` | One clause per executable command the body quotes: `run`, with what it returned, or `NOT RUN` with why; the literal `none` where the body quotes no command. Blank on a body that quotes a command means the command was never run. See "Commands inside an observation" below. |
+| `commands_verified` | One clause per executable command, and per predicate (a regex, a search pattern, a hook or check condition), the body quotes: `run`, with what it returned — for a predicate, whether it matched the positive case and the negative — or `NOT RUN` with why; the literal `none` where the body quotes neither. Blank on a body that quotes a command or predicate means it was never run. See "Commands inside an observation" below. |
 | `skill_qualifiers` | Optional map: skill name → the section or part of that skill meant. |
 | `migration_note` | Present only on files converted from a legacy log where the converter refused to guess; clear it once reviewed. |
 
@@ -352,7 +352,21 @@ possible, mark the command unverified in the body. Record the outcome in
 the body quotes no command, for the same reason `siblings_checked:` never
 stays blank: a body with an unrun command is byte-identical whether it was
 checked and trusted or never considered, and only the field makes the
-absence visible.
+absence visible. Where the run shows the remembered form is wrong, the
+body quotes the form that ran, never the one it was reconstructed from.
+
+**A predicate the Suggested improvement proposes — a regex, a search
+pattern, a condition for a hook or check — is run the same way, against
+the positive case the Issue describes and one negative, before the file
+is written; record both results in `commands_verified:`.** A predicate is
+not a command, so "run every command" does not reach it, the field
+honestly says `none`, and the entry carries the detector onward with a
+first-hand observation's authority. The input matters as much as the
+run: a detector run over a repository returns some output whether or not
+it catches the case in hand, so the informative run is on the known
+positive — the literal failing string the Issue already holds — and on
+one string that must not match. A predicate that misses its positive or
+matches its negative is corrected in the body before the file is written.
 
 **A sweep the Suggested improvement prescribes names the behaviour, not
 the pattern that found the first instance.** When the improvement tells a
@@ -1097,10 +1111,9 @@ an `observation-log/`? a `log.md.migrated`?) — a parallel session may have
 migrated or reorganised the storage. Never let an append silently recreate
 a missing target: that converts a migration signal into corruption (see
 `migration.md` on coexistence with live sessions). A writer's model of
-shared mutable state is only as fresh as its last read.
-
-**This covers reads as well as writes**: an empty read over content you
-know exists is the same signal ("Guard the read, not just the write").
+shared mutable state is only as fresh as its last read. An empty read
+over content you know exists is the same signal ("An empty scan over a
+non-empty log is a broken command", above).
 
 ### Why this is the entire concurrency story
 
@@ -1160,6 +1173,18 @@ resolved.
 
 Core rule (How to Log); re-read first — a parallel review may have
 resolved it — and never rewrite a file you don't own.
+
+**An appended instance is a test input for the entry's predicate.** The
+restatement path (core, "Check for a restatement before writing") is the
+one moment a session holds the literal failing string together with the
+fix the entry proposes; nothing else puts the two against each other, so
+each appended instance re-cites the fix with the weight of one more
+confirmation while the number of times it was run stays at zero. When
+you append an instance and the entry proposes a predicate, or quotes a
+command, run it on the new instance's literal string and note in the
+appended text whether it matched. A miss is the finding: correct the
+Suggested improvement in the same edit, and add the run to
+`commands_verified:`. Repeating a prescription is not testing it.
 
 When a backlog is split between parallel sessions, the mechanical safety
 above cannot stop two sessions legitimately resolving the *same* file in
