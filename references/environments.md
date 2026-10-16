@@ -1186,22 +1186,26 @@ policy does not govern, not as the `.ps1` shim it refuses. The app's own
 terminal panel is a child of the packaged app and inherits its startup
 environment, so it is not the user's side either.
 
-**Resolving from the far side on a packaged Windows host.** `explorer.exe`
-starts what it opens outside the package, so the agent can reach the
-user's side without the person: write a pure-ASCII `.cmd` under
+**Resolving from the far side on a packaged Windows host — only with the
+user's explicit go-ahead.** `explorer.exe` starts what it opens outside the
+package, so a script started through it runs on the user's side of the
+sandbox. That is a deliberate step outside the agent's own execution
+context: tell the user what the script does and that it runs outside the
+app, and run it only once they have said yes in that session — never as a
+silent fallback. The recipe: write a pure-ASCII `.cmd` under
 `%USERPROFILE%` (not under `AppData` or `%TEMP%`), start it through
-Explorer, wait for a completion file, and read the output. Two parts are
-required. A **vantage marker** written under `%APPDATA%` from inside
-exists only inside the package, so the result counts only if its first
-line is exactly `vantage-marker-visible: False`; `True` means the vantage
-is unproven (the run never left the package, or this host does not
-redirect that path), never a pass. The **completion file** keeps the read
-from racing the script. The script travels as `-EncodedCommand`, so the
-user's execution policy cannot refuse it and no override is needed; the
-`.cmd` expands `%USERPROFILE%` at run time, so it stays ASCII on a
-non-ASCII profile path; `$ProgressPreference = 'SilentlyContinue'` keeps a
-CLIXML progress block out of the output. Replace the last two probe lines
-with whatever the hand-off needs resolved.
+Explorer, wait for a completion file, and read the output. A **vantage
+marker** written under `%APPDATA%` from inside exists only inside the
+package, so the result counts only if its first line is exactly
+`vantage-marker-visible: False`; `True` means the vantage is unproven,
+never a pass. The **completion file** keeps the read from racing the
+script. The script travels as `-EncodedCommand`, which the execution
+policy does not govern (it governs script files) — say so when asking,
+since the user may have set that policy on purpose; the `.cmd` expands
+`%USERPROFILE%` at run time, so it stays ASCII on a non-ASCII profile
+path; `$ProgressPreference = 'SilentlyContinue'` keeps a CLIXML progress
+block out of the output. Replace the last two probe lines with whatever
+the hand-off needs resolved.
 
 ```powershell
 $id = [guid]::NewGuid().ToString('N').Substring(0,8)
