@@ -3,10 +3,10 @@
 # Over its ceiling, a file with more than 12 load triggers is split by episode;
 # one with 12 or fewer is trimmed, or its ceiling raised with a dated reason.
 # A ceiling more than 3 lines above its file's count is lowered to the count.
-environments.md 1704
+environments.md 1727 2026-10-16 #289 unprimed activation trial, #293 desktop-app scheduler, #312 other agent tools
 migration.md 250 2026-10-09 the abandoned-root pointer file is named and read, migrate-log.py checks dropped keys
 observation-log.md 1474
 signals.md 234
-skill-authoring.md 1369
-starter-principles.md 482
-weekly-review.md 1990
+skill-authoring.md 1374 2026-10-16 #307 binary prerequisite that starts, #301 ./<path> convention
+starter-principles.md 504 2026-10-16 #303 marker after the answer, #298 cited bodies, #260 baseline in entry 23
+weekly-review.md 2055 2026-10-16 #288 corrected forms, #284 own check, #302 dated summary claims, #297 shared-tree checks, #299 per-skill keep-two
